@@ -1,0 +1,34 @@
+package com.dominik.Gecko2Chat.enums;
+
+public enum ErrorCode {
+    //Friend Preference domain
+    FRIEND_PREFERENCE_NOT_FOUND,
+
+    //Hibernate validation
+    VALIDATION_ERROR,
+
+    //Friend Request domain
+    FRIEND_REQUEST_SELF,
+    FRIEND_REQUEST_BLOCKED_BY_USER,
+    FRIEND_REQUEST_ALREADY_FRIENDS,
+    FRIEND_REQUEST_EXISTS,
+    FRIEND_REQUEST_NOT_FOUND,
+
+    //User domain
+    FRIEND_NOT_FOUND,
+    PROVIDER_ID_ALREADY_EXISTS,
+    USERNAME_ALREADY_EXISTS,
+    EMAIL_TAKEN,
+    USERNAME_NOT_FOUND,
+    ON_BOARDING_REQUIRED,
+    RESOURCE_NOT_FOUND,
+
+    //User Identity Provider domain
+    IDP_ACCOUNT_ALREADY_LINKED,
+    IDP_PROVIDER_ALREADY_REGISTERED,
+    IDP_NOT_SUPPORTED,
+
+    //Internal
+    UNAUTHORIZED_ACCESS, KEYCLOAK_API_ERROR,
+
+}
