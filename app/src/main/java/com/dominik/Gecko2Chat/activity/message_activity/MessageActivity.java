@@ -7,7 +7,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -16,15 +15,18 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.BaseActivity;
 import com.dominik.Gecko2Chat.activity.message_activity.adapter.MessageAdapter;
+import com.dominik.Gecko2Chat.enums.PrivateMessageType;
 import com.dominik.Gecko2Chat.enums.TextType;
 import com.dominik.Gecko2Chat.model.MessageModel;
-import com.dominik.Gecko2Chat.model.response.ChatMessageDto;
-import com.dominik.Gecko2Chat.model.response.MessageDto;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.dominik.Gecko2Chat.viewmodel.MessageViewModel;
+import com.dominik.Gecko2Chat.model.response.websocket.*;
+import com.dominik.Gecko2Chat.model.response.websocket.adapter.PrivateMessageDeserializer;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
@@ -38,11 +40,12 @@ public class MessageActivity extends BaseActivity {
     private ImageView btnBack;
     private CardView btnSend;
     private String myId, friendId, friendName;
-    private Gson gson = new Gson();
+    private Gson gson = new GsonBuilder()
+            .registerTypeAdapter(PrivateMessage.class, new PrivateMessageDeserializer())
+            .create();
 
     private Disposable messageSubscription;
     private MessageViewModel messageViewModel;
-
 
 
     @Override
@@ -129,28 +132,37 @@ public class MessageActivity extends BaseActivity {
     }
 
 
-
-
     private void handleIncomingMessage(String message) {
         try {
-            MessageDto dto = gson.fromJson(message, MessageDto.class);
+            PrivateMessage dto = gson.fromJson(message, PrivateMessage.class);
 
-            // FILTER: Only show messages from the friend we are currently chatting with
-            if (dto.senderId().equals(friendId)) {
-                var msg = new MessageModel(
-                        dto.id(),
-                        dto.senderId(),
-                        myId,
-                        dto.content(),
-                        LocalDateTime.parse(dto.timestamp()),
-                        dto.textType()
-                );
+            switch(dto) {
+                case MessageReceivedDto messageReceivedDto -> {
+                    Log.i("Chat", "Message received: " + messageReceivedDto.uuid());
 
-                adapter.addMessage(msg);
-                rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
+                }
 
-                runOnUiThread(() -> messageViewModel.addNewMessage(msg));
+                case ChatMessageDto messageDto -> {
+                    // FILTER: Only show messages from the friend we are currently chatting with
+                    if (messageDto.senderId().equals(friendId)) {
+                        var msg = new MessageModel(
+                                messageDto.clientMsgId(),
+                                messageDto.senderId(),
+                                myId,
+                                messageDto.content(),
+                                LocalDateTime.parse(messageDto.timestamp()),
+                                messageDto.textType()
+                        );
+
+                        adapter.addMessage(msg);
+                        rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
+
+                        runOnUiThread(() -> messageViewModel.addNewMessage(msg));
+                    }
+                }
             }
+
+
         } catch (Exception e) {
             Log.e("Chat", "Error parsing message", e);
         }
@@ -186,13 +198,24 @@ public class MessageActivity extends BaseActivity {
         //TODO sanitize input
 
         //
-        String json = gson.toJson(new ChatMessageDto(myId, friendId, content, LocalDateTime.now().toString()));
-        System.out.println(json);
+        var dto = new ChatMessageDto(
+                UUID.randomUUID().toString(),
+                myId,
+                friendId,
+                TextType.TEXT,
+                PrivateMessageType.CHAT_MESSAGE,
+                content,
+                LocalDateTime.now().toString());
+
+        String json = gson.toJson(dto);
+
         WebSocketManager.getInstance().sendMessage(json);
+        Log.i("Chat", "Sending message: " + json);
+
         etMessageInput.setText("");
 
         // Optimistically add to adapter
-        adapter.addMessage(new MessageModel(null, myId, friendId, content, LocalDateTime.now(), TextType.TEXT));
+        adapter.addMessage(new MessageModel(dto.clientMsgId(), myId, friendId, content, LocalDateTime.parse(dto.timestamp()), TextType.TEXT));
     }
 
 }

@@ -3,8 +3,6 @@ package com.dominik.Gecko2Chat.repository;
 import android.content.Context;
 import android.util.Log;
 
-import androidx.lifecycle.MutableLiveData;
-
 import com.dominik.Gecko2Chat.model.MessageModel;
 import com.dominik.Gecko2Chat.model.api.ApiResponse;
 import com.dominik.Gecko2Chat.model.api.MessageApi;
@@ -12,7 +10,6 @@ import com.dominik.Gecko2Chat.model.response.MessageDto;
 import com.dominik.Gecko2Chat.model.response.MessageHistoryDto;
 import com.dominik.Gecko2Chat.rest.RestClient;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,7 +51,7 @@ public class MessageRepository {
                     List<MessageModel> messages = messagesDto.stream()
                                     .map(messageDto -> {
                                         String receiverId = messageDto.conversationId().split(":")[0].equals(messageDto.senderId()) ? messageDto.conversationId().split(":")[1] : messageDto.conversationId().split(":")[0];
-                                        return new MessageModel(messageDto.id(), messageDto.senderId(), receiverId, messageDto.content(), LocalDateTime.parse(messageDto.timestamp()), messageDto.textType());})
+                                        return new MessageModel(messageDto.clientMsgId(), messageDto.senderId(), receiverId, messageDto.content(), messageDto.timestamp(), messageDto.textType());})
                                     .collect(Collectors.toList());
 
                     Collections.reverse(messages);

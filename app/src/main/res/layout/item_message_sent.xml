@@ -2,7 +2,6 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginTop="4dp"
@@ -10,6 +9,7 @@
     android:paddingEnd="8dp">
 
     <LinearLayout
+        android:id="@+id/msgContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_message_sent"
@@ -21,6 +21,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <!-- Message text -->
         <TextView
             android:id="@+id/tvMessageContent"
             android:layout_width="wrap_content"
@@ -29,16 +30,34 @@
             android:textColor="@color/text_primary"
             android:textSize="16sp" />
 
-        <TextView
-            android:id="@+id/tvMessageTime"
+        <!-- Time + Status -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end"
             android:layout_marginTop="4dp"
-            android:text="10:30 PM"
-            android:textColor="@color/green_accent"
-            android:textSize="10sp"
-            android:alpha="0.8"/>
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvMessageTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="10:30 PM"
+                android:textColor="@color/green_accent"
+                android:textSize="10sp"
+                android:alpha="0.8"/>
+
+            <ImageView
+                android:id="@+id/imgMessageStatus"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginStart="4dp"
+                android:src="@drawable/ic_double_tick"
+                app:tint="@color/browser_actions_bg_grey"
+                android:contentDescription="Message status"/>
+        </LinearLayout>
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

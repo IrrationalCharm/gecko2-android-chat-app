@@ -49,17 +49,19 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        var something = WebSocketManager.getInstance().getConnectionStatus()
+        var disposable = WebSocketManager.getInstance().getConnectionStatus()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(status -> {
-                    if (status == WebSocketManager.ConnectionStatus.CONNECTING) {
-                        // Show "Connecting..." banner/spinner
-                    } else if (status == WebSocketManager.ConnectionStatus.CONNECTED) {
-                        // Hide banner
-                    } else if (status == WebSocketManager.ConnectionStatus.ERROR) {
-                        // Show "Connection Failed" message
-                    }
-                });
+                .subscribe(MainActivity::updateConnectionBanner);
+    }
+
+    private static void updateConnectionBanner(WebSocketManager.ConnectionStatus status) {
+        if (status == WebSocketManager.ConnectionStatus.CONNECTING) {
+            // Show "Connecting..." banner/spinner
+        } else if (status == WebSocketManager.ConnectionStatus.CONNECTED) {
+            // Hide banner
+        } else if (status == WebSocketManager.ConnectionStatus.ERROR) {
+            // Show "Connection Failed" message
+        }
     }
 
     private void updateMenuUI(Tabs activeTab) {
