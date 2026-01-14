@@ -14,13 +14,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.dominik.Gecko2Chat.R;
+import com.dominik.Gecko2Chat.activity.BaseActivity;
 import com.dominik.Gecko2Chat.activity.message_activity.adapter.MessageAdapter;
 import com.dominik.Gecko2Chat.enums.TextType;
 import com.dominik.Gecko2Chat.model.MessageModel;
 import com.dominik.Gecko2Chat.model.response.ChatMessageDto;
 import com.dominik.Gecko2Chat.model.response.MessageDto;
-import com.dominik.Gecko2Chat.utils.AuthStateManager;
-import com.dominik.Gecko2Chat.utils.UserManager;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.dominik.Gecko2Chat.viewmodel.MessageViewModel;
 import com.google.gson.Gson;
@@ -31,9 +30,8 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 
-public class MessageActivity extends AppCompatActivity {
+public class MessageActivity extends BaseActivity {
 
-    private UserManager userManager;
     private RecyclerView rvChatMessages;
     private MessageAdapter adapter;
     private EditText etMessageInput;
@@ -52,7 +50,6 @@ public class MessageActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        userManager = new UserManager(getApplicationContext());
         myId = userManager.getUser().internalId();
         friendId = getIntent().getStringExtra("FRIEND_ID");
         friendName = getIntent().getStringExtra("FRIEND_NAME");
@@ -84,6 +81,26 @@ public class MessageActivity extends AppCompatActivity {
     }
 
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Listen for incoming messages
+        messageSubscription = WebSocketManager.getInstance().getMessageStream()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::handleIncomingMessage, Throwable::printStackTrace);
+    }
+
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Unsubscribe to avoid memory leaks
+        if (messageSubscription != null && !messageSubscription.isDisposed())
+            messageSubscription.dispose();
+    }
+
+
     private void setupPaginationListener() {
         rvChatMessages.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -111,24 +128,7 @@ public class MessageActivity extends AppCompatActivity {
         return (pos >= numItems - 2);
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Listen for incoming messages
-        messageSubscription = WebSocketManager.getInstance().getMessageStream()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::handleIncomingMessage, Throwable::printStackTrace);
-    }
 
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // Unsubscribe to avoid memory leaks
-        if (messageSubscription != null && !messageSubscription.isDisposed())
-            messageSubscription.dispose();
-    }
 
 
     private void handleIncomingMessage(String message) {

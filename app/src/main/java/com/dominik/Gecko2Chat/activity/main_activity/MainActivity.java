@@ -4,24 +4,24 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AppCompatActivity;
+
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.dominik.Gecko2Chat.R;
+import com.dominik.Gecko2Chat.activity.BaseActivity;
 import com.dominik.Gecko2Chat.activity.main_activity.fragments.ChatsFragment;
 import com.dominik.Gecko2Chat.activity.main_activity.fragments.ContactsFragment;
-import com.dominik.Gecko2Chat.utils.AuthStateManager;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.dominik.Gecko2Chat.viewmodel.MainViewModel;
 import com.google.android.material.card.MaterialCardView;
 
+import io.reactivex.android.schedulers.AndroidSchedulers;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity {
 
-    private WebSocketManager webSocketManager;
     private final Fragment chatsFragment = new ChatsFragment();
     private final Fragment contactFragment = new ContactsFragment();
     //private final Fragment profileFragment = new ProfileFragment();
@@ -29,15 +29,11 @@ public class MainActivity extends AppCompatActivity {
     private MaterialCardView cvProfileImage;
     private MainViewModel viewModel;
 
-    private AuthStateManager authStateManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
-
-        authStateManager = new AuthStateManager(getApplicationContext());
-        WebSocketManager.getInstance().connect(authStateManager.getAccessToken());
 
         initViews();
         initListeners();
@@ -50,7 +46,21 @@ public class MainActivity extends AppCompatActivity {
         loadFragment(chatsFragment);
     }
 
-
+    @Override
+    protected void onResume() {
+        super.onResume();
+        var something = WebSocketManager.getInstance().getConnectionStatus()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(status -> {
+                    if (status == WebSocketManager.ConnectionStatus.CONNECTING) {
+                        // Show "Connecting..." banner/spinner
+                    } else if (status == WebSocketManager.ConnectionStatus.CONNECTED) {
+                        // Hide banner
+                    } else if (status == WebSocketManager.ConnectionStatus.ERROR) {
+                        // Show "Connection Failed" message
+                    }
+                });
+    }
 
     private void updateMenuUI(Tabs activeTab) {
         int colorGreen = ContextCompat.getColor(this, R.color.green_accent);

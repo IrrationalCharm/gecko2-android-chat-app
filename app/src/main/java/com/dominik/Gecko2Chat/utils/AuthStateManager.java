@@ -3,7 +3,6 @@ package com.dominik.Gecko2Chat.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.util.Log;
 
 import net.openid.appauth.AuthState;
 import net.openid.appauth.AuthorizationException;
@@ -78,6 +77,10 @@ public class AuthStateManager {
 
     public void updateAuthState(AuthState state) {
         prefers.edit().putString(KEY_STATE, state.jsonSerializeString()).apply();
+    }
+
+    public void clearAuthState() {
+        prefers.edit().remove(KEY_STATE).apply();
     }
 
 

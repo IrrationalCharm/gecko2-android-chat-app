@@ -1,11 +1,16 @@
 package com.dominik.Gecko2Chat.rest;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.dominik.Gecko2Chat.activity.LoginActivity;
 import com.dominik.Gecko2Chat.utils.AuthStateManager;
+import com.dominik.Gecko2Chat.utils.UserManager;
+import com.dominik.Gecko2Chat.utils.WebSocketManager;
 
 import net.openid.appauth.AppAuthConfiguration;
 import net.openid.appauth.AuthState;
@@ -29,6 +34,7 @@ import okhttp3.Response;
 public class AuthInterceptor implements Interceptor {
     private final AuthStateManager authStateManager;
     private final AuthorizationService authService;
+    private final Context context;
 
     private static final String AUTH_ENDPOINT = "http://192.168.1.134:8080/realms/gecko2-realm/protocol/openid-connect/auth";
     private static final String TOKEN_ENDPOINT = "http://192.168.1.134:8080/realms/gecko2-realm/protocol/openid-connect/token";
@@ -36,6 +42,8 @@ public class AuthInterceptor implements Interceptor {
 
     public AuthInterceptor(Context context) {
         authStateManager = new AuthStateManager(context.getApplicationContext());
+        this.context = context.getApplicationContext();
+
         //Allows opening a connection to http:// addresses TODO: remove this when https added.
         ConnectionBuilder connectionBuilder = uri -> {
             URL url = new URL(uri.toString());
@@ -64,15 +72,15 @@ public class AuthInterceptor implements Interceptor {
 
         // 2. CHECK IF EXPIRED (or close to expiring)
         if (state.getNeedsTokenRefresh()) {
-            // We need to refresh the token SYNCHRONOUSLY before this request proceeds
             String freshToken = refreshAccessTokenSync(state);
 
             if (freshToken != null) {
                 // Refresh success! Use new token
                 return chain.proceed(addAuthorizationHeader(originalRequest, freshToken));
             } else {
-                // Refresh failed. Proceed with old token (it will fail)
-                return chain.proceed(originalRequest);
+                Log.e("AuthInterceptor", "Token refresh failed. Redirecting to login");
+                performLogout();
+                throw new IOException("Token expired, user logged out.");
             }
         }
 
@@ -131,5 +139,20 @@ public class AuthInterceptor implements Interceptor {
         return originalRequest.newBuilder()
                 .header("Authorization", "Bearer " + token)
                 .build();
+    }
+
+
+    private void performLogout() {
+        // 1. Clear Local Data
+        UserManager userManager = new UserManager(context);
+        userManager.clearUser();
+        authStateManager.clearAuthState();
+        WebSocketManager.getInstance().disconnect();
+
+
+        // 2. Navigate to Login
+        Intent intent = new Intent(context, LoginActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // Clears the back stack
+        context.startActivity(intent);
     }
 }
