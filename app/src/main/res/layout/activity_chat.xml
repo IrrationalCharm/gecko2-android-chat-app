@@ -4,8 +4,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
     android:layout_height="match_parent"
-    android:background="@color/background_dark">
+    android:background="@color/surface_dark">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/toolbarLayout"
@@ -78,6 +79,7 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvChatMessages"
         android:layout_width="match_parent"
+        android:background="@color/background_dark"
         android:layout_height="0dp"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"

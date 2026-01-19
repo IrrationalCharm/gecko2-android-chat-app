@@ -18,6 +18,7 @@ import com.dominik.Gecko2Chat.activity.message_activity.adapter.MessageAdapter;
 import com.dominik.Gecko2Chat.enums.PrivateMessageType;
 import com.dominik.Gecko2Chat.enums.TextType;
 import com.dominik.Gecko2Chat.model.MessageModel;
+import com.dominik.Gecko2Chat.utils.UserManager;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.dominik.Gecko2Chat.viewmodel.MessageViewModel;
 import com.dominik.Gecko2Chat.model.response.websocket.*;
@@ -34,17 +35,15 @@ import io.reactivex.schedulers.Schedulers;
 
 public class MessageActivity extends BaseActivity {
 
+    private String myId;
+
     private RecyclerView rvChatMessages;
     private MessageAdapter adapter;
     private EditText etMessageInput;
     private ImageView btnBack;
     private CardView btnSend;
-    private String myId, friendId, friendName;
-    private Gson gson = new GsonBuilder()
-            .registerTypeAdapter(PrivateMessage.class, new PrivateMessageDeserializer())
-            .create();
+    private String friendId, friendName;
 
-    private Disposable messageSubscription;
     private MessageViewModel messageViewModel;
 
 
@@ -53,7 +52,7 @@ public class MessageActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        myId = userManager.getUser().internalId();
+        myId = new UserManager(this).getUser().internalId();
         friendId = getIntent().getStringExtra("FRIEND_ID");
         friendName = getIntent().getStringExtra("FRIEND_NAME");
 
@@ -61,17 +60,15 @@ public class MessageActivity extends BaseActivity {
         initListeners();
 
         messageViewModel = new ViewModelProvider(this).get(MessageViewModel.class);
+        messageViewModel.initChat(friendId);
+
         messageViewModel.getMessageList().observe(this, messages -> {
             int oldSize = adapter.getItemCount();
             adapter.setMessages(messages);
 
             if (oldSize == 0) {
-                // First load -> Scroll to bottom
                 rvChatMessages.scrollToPosition(adapter.getItemCount() - 1);
             } else if (messages.size() > oldSize && !isUserAtBottom()) {
-
-            } else {
-                // New message received -> Scroll to bottom
                 rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
             }
         });
@@ -83,25 +80,6 @@ public class MessageActivity extends BaseActivity {
 
     }
 
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Listen for incoming messages
-        messageSubscription = WebSocketManager.getInstance().getMessageStream()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::handleIncomingMessage, Throwable::printStackTrace);
-    }
-
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // Unsubscribe to avoid memory leaks
-        if (messageSubscription != null && !messageSubscription.isDisposed())
-            messageSubscription.dispose();
-    }
 
 
     private void setupPaginationListener() {
@@ -132,41 +110,7 @@ public class MessageActivity extends BaseActivity {
     }
 
 
-    private void handleIncomingMessage(String message) {
-        try {
-            PrivateMessage dto = gson.fromJson(message, PrivateMessage.class);
 
-            switch(dto) {
-                case MessageReceivedDto messageReceivedDto -> {
-                    Log.i("Chat", "Message received: " + messageReceivedDto.uuid());
-
-                }
-
-                case ChatMessageDto messageDto -> {
-                    // FILTER: Only show messages from the friend we are currently chatting with
-                    if (messageDto.senderId().equals(friendId)) {
-                        var msg = new MessageModel(
-                                messageDto.clientMsgId(),
-                                messageDto.senderId(),
-                                myId,
-                                messageDto.content(),
-                                LocalDateTime.parse(messageDto.timestamp()),
-                                messageDto.textType()
-                        );
-
-                        adapter.addMessage(msg);
-                        rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
-
-                        runOnUiThread(() -> messageViewModel.addNewMessage(msg));
-                    }
-                }
-            }
-
-
-        } catch (Exception e) {
-            Log.e("Chat", "Error parsing message", e);
-        }
-    }
 
     private void initListeners() {
         btnBack.setOnClickListener(v -> finish());
@@ -197,25 +141,9 @@ public class MessageActivity extends BaseActivity {
 
         //TODO sanitize input
 
-        //
-        var dto = new ChatMessageDto(
-                UUID.randomUUID().toString(),
-                myId,
-                friendId,
-                TextType.TEXT,
-                PrivateMessageType.CHAT_MESSAGE,
-                content,
-                LocalDateTime.now().toString());
-
-        String json = gson.toJson(dto);
-
-        WebSocketManager.getInstance().sendMessage(json);
-        Log.i("Chat", "Sending message: " + json);
+        messageViewModel.sendMessage(content);
 
         etMessageInput.setText("");
-
-        // Optimistically add to adapter
-        adapter.addMessage(new MessageModel(dto.clientMsgId(), myId, friendId, content, LocalDateTime.parse(dto.timestamp()), TextType.TEXT));
     }
 
 }
