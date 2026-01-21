@@ -37,11 +37,16 @@ dependencies {
     implementation("net.openid:appauth:0.11.1")
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")
-
+    implementation("androidx.lifecycle:lifecycle-livedata:2.10.0")
     implementation("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
-// RxJava (Required by the library above)
+    // RxJava required by the above library
     implementation("io.reactivex.rxjava2:rxjava:2.2.5")
     implementation("io.reactivex.rxjava2:rxandroid:2.1.0")
+
+    val room_version = "2.8.4"
+    implementation("androidx.room:room-runtime:$room_version")
+    annotationProcessor("androidx.room:room-compiler:$room_version")
+    implementation("androidx.room:room-rxjava2:$room_version")
 
     implementation(libs.appcompat)
     implementation(libs.material)

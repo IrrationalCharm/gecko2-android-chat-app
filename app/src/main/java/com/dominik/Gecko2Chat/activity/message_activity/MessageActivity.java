@@ -1,7 +1,6 @@
 package com.dominik.Gecko2Chat.activity.message_activity;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -15,23 +14,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.BaseActivity;
 import com.dominik.Gecko2Chat.activity.message_activity.adapter.MessageAdapter;
-import com.dominik.Gecko2Chat.enums.PrivateMessageType;
-import com.dominik.Gecko2Chat.enums.TextType;
-import com.dominik.Gecko2Chat.model.MessageModel;
 import com.dominik.Gecko2Chat.utils.UserManager;
-import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.dominik.Gecko2Chat.viewmodel.MessageViewModel;
 import com.dominik.Gecko2Chat.model.response.websocket.*;
-import com.dominik.Gecko2Chat.model.response.websocket.adapter.PrivateMessageDeserializer;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
 
 public class MessageActivity extends BaseActivity {
 
@@ -141,9 +127,14 @@ public class MessageActivity extends BaseActivity {
 
         //TODO sanitize input
 
-        messageViewModel.sendMessage(content);
+        messageViewModel.addNewMessage(content);
 
         etMessageInput.setText("");
+
+        if (!isUserAtBottom()) {
+            rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
+        }
+
     }
 
 }
