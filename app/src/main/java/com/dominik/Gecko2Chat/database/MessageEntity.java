@@ -19,11 +19,9 @@ public class MessageEntity {
     public String senderId;
     public String recipientId;
     public String content;
-    public long timestamp; // Store as epoch time
+    public LocalDateTime timestamp; // Store as epoch time
     public String status;    // Store Enum as String
     public String textType;  // Store Enum as String
 
-    public LocalDateTime getLocalDateTime() {
-        return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
-    }
+
 }

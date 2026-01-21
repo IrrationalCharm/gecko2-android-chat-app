@@ -6,6 +6,7 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import io.reactivex.Single;
@@ -18,13 +19,12 @@ public interface MessageDao {
     LiveData<List<MessageEntity>> getMessagesForChat(String friendId, int limit);
 
     //Returns true if there are ANY messages older than the given timestamp
-    @Query("SELECT COUNT(*) > 0 FROM messages WHERE conversationId = :friendId AND timestamp < :timestamp")
-    Single<Boolean> hasMessagesBefore(String friendId, long timestamp);
+    @Query("SELECT COUNT(*) > 0 FROM messages WHERE conversationId = :conversationId AND timestamp < :timestamp")
+    boolean hasMessagesBefore(String conversationId, LocalDateTime timestamp);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertMessage(MessageEntity message);
 
-    // 3. Insert a list (for history fetch)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<MessageEntity> messages);
 

@@ -30,10 +30,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-
-import io.reactivex.Completable;
-import io.reactivex.CompletableSource;
-import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
@@ -97,7 +93,7 @@ public class MessageRepository {
                     mEntity.senderId = messageDto.senderId();
                     mEntity.recipientId = messageDto.recipientId();
                     mEntity.content = messageDto.content();
-                    //mEntity.timestamp = LocalDateTime.parse(messageDto.timestamp()).toInstant();
+                    mEntity.timestamp = LocalDateTime.parse(messageDto.timestamp());
                     mEntity.textType = messageDto.textType().toString();
 
                     executor.execute(() -> messageDao.insertMessage(mEntity));
@@ -115,8 +111,8 @@ public class MessageRepository {
         }
     }
 
-    public LiveData<List<MessageEntity>> getMessagesForChat(String conversationId) {
-        return messageDao.getMessagesForChat(conversationId);
+    public LiveData<List<MessageEntity>> getMessagesForChat(String conversationId, int limit) {
+        return messageDao.getMessagesForChat(conversationId, limit);
     }
 
     public void sendMessage(String myId, String currentFriendId, String content) {
@@ -141,51 +137,37 @@ public class MessageRepository {
 
     }
 
-    public Completable loadMoreHistory(long oldestTimestamp) {
-        //Asks first if local DB has messages before date
-        return messageDao.hasMessagesBefore(currentConversationId, oldestTimestamp)
-                .subscribeOn(Schedulers.io())
-                .flatMapCompletable(hasMessages -> {
-                    if(hasMessages)
-                        return Completable.complete();
-                     else
-                        return fetchAndInsertMessages(oldestTimestamp); //If not, fetches from api and inserts
+    public void loadMoreHistory(String friendId, LocalDateTime oldestTimestamp) {
+        executor.execute(() -> {
+            boolean hasLocalHistory = messageDao.hasMessagesBefore(currentConversationId, oldestTimestamp);
 
-                });
+            if(hasLocalHistory) {
+                Log.i("MessageRepository", "Loading local history");
+                return;
+            }
+
+            Log.i("MessageRepository", "Loading remote history");
+            fetchAndInsertMessages(friendId, oldestTimestamp);
+        });
     }
 
-    private Completable fetchAndInsertMessages(long beforeTime) {
-        return messageApi.getConversationHistory(currentConversationId, beforeTime, 20)
-                .flatMapCompletable(response -> {
-                    if (response.body() != null && response.body().data() != null) {
-                        List<MessageEntity> entities = response.body().data().messages().stream()
-                                .map(ConversationUtils::mapDtoToEntity) // Your mapper
-                                .collect(Collectors.toList());
-
-                        if (entities.isEmpty()) {
-                            return Completable.error(new Exception("End of history"));
-                        }
-                        // Insert and wait for DB to finish
-                        return messageDao.insertAll(entities);
-                    } else {
-                        return Completable.error(new Exception("Empty response"));
-                    }
-                });
-    }
-
-
-    public void loadOlderMessages(String friendId, int page, int size) {
-        messageApi.getConversation(friendId, page, size).enqueue(new Callback<ApiResponse<MessageHistoryDto>>() {
+    private void fetchAndInsertMessages(String friendId, LocalDateTime beforeTime) {
+        messageApi.getConversation(friendId, beforeTime, 20).enqueue(new Callback<ApiResponse<MessageHistoryDto>>() {
             @Override
             public void onResponse(Call<ApiResponse<MessageHistoryDto>> call, Response<ApiResponse<MessageHistoryDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {
 
                     List<MessageDto> messagesDto = response.body().data().messages();
-                    List<MessageEntity> messages = messagesDto.stream()
-                                    .map(ConversationUtils::mapMessageDtoToMessageEntity)
-                                    .collect(Collectors.toList());
 
-                    messageDao.insertAll(messages);
+                    if (messagesDto == null || messagesDto.isEmpty()) return;
+
+                    executor.execute(() ->{
+                        List<MessageEntity> messages = messagesDto.stream()
+                                .map(ConversationUtils::mapMessageDtoToMessageEntity)
+                                .collect(Collectors.toList());
+                        messageDao.insertAll(messages);
+                    });
+
                 } else {
                     Log.e("MessageRepository", "Error fetching history: " + response.code());
                 }
@@ -194,7 +176,6 @@ public class MessageRepository {
             @Override
             public void onFailure(Call<ApiResponse<MessageHistoryDto>> call, Throwable t) {
                 Log.e("MessageRepository", "Network Failure: " + t.getMessage());
-                callback.onError("Error: " + t.getMessage());
             }
         });
     }

@@ -14,6 +14,7 @@ import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.dominik.Gecko2Chat.utils.ConversationUtils;
 import com.dominik.Gecko2Chat.utils.UserManager;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,7 +45,6 @@ public class MessageViewModel extends AndroidViewModel {
         userManager = new UserManager(application.getApplicationContext());
         repository = MessageRepository.getInstance(application);
 
-
     }
 
     //Has to be called by the activity/fragment
@@ -53,12 +53,16 @@ public class MessageViewModel extends AndroidViewModel {
         myId = userManager.getUser().internalId();
         String conversationId = ConversationUtils.getConversationId(currentFriendId, myId);
 
-        messageList = Transformations.map(repository.getMessagesForChat(conversationId),
-                entities ->
-                    entities.stream().map(ConversationUtils::mapEntityToMessageModel).toList()
+        repository.setCurrentConversationId(conversationId);
+
+        //whenever "messageLimit" changes, this function runs again. switchMap
+        messageList = Transformations.switchMap(messageLimit, limit ->
+                Transformations.map(repository.getMessagesForChat(conversationId, limit),
+                        entities -> entities.stream()
+                                .map(ConversationUtils::mapEntityToMessageModel)
+                                .toList()
+                )
         );
-
-
     }
 
 
@@ -67,22 +71,13 @@ public class MessageViewModel extends AndroidViewModel {
 
         if (currentList == null || currentList.isEmpty()) return;
 
-        String oldestTimestamp = currentList.get(0).timestamp().toString();
+        LocalDateTime oldestTimestamp = currentList.get(0).timestamp();
+        repository.loadMoreHistory(friendId, oldestTimestamp);
 
-        disposable.add(
-                repository.loadMoreHistory(friendId, oldestTimestamp)
-                        .observeOn(AndroidSchedulers.mainThread()))
-                        .subscribe( () -> {
-                            int newLimit = messageLimit.getValue() + 20;
-                            messageLimit.setValue(newLimit);
-                            //isLoading = false;
-                        },
-                        throwable -> {
-                            Log.e("MessageViewModel", "Error loading more history", throwable);
-                            //isLoading = false;
-                        }
-
-        );
+        Integer currentLimit = messageLimit.getValue();
+        if (currentLimit != null) {
+            messageLimit.setValue(currentLimit + 20);
+        }
     }
 
 
@@ -91,16 +86,13 @@ public class MessageViewModel extends AndroidViewModel {
     }
 
 
-
     public void addNewMessage(String content) {
         repository.sendMessage(myId, currentFriendId, content);
-
     }
 
     @Override
     protected void onCleared() {
         super.onCleared();
-
-
+        repository.clearCurrentConversationId();
     }
 }

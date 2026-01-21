@@ -22,7 +22,6 @@ public final class ConversationUtils {
 
     //Message model is for frontend UI.
     public static MessageModel mapEntityToMessageModel(MessageEntity entity) {
-        LocalDateTime time = LocalDateTime.parse(entity.timestamp);
         TextType type = TextType.valueOf(entity.textType);
 
         return new MessageModel(
@@ -30,7 +29,7 @@ public final class ConversationUtils {
                 entity.senderId,
                 entity.recipientId,
                 entity.content,
-                time,
+                entity.timestamp,
                 type);
     }
 
@@ -42,7 +41,7 @@ public final class ConversationUtils {
         entity.senderId = dto.senderId();
         entity.recipientId = dto.recipientId();
         entity.content = dto.content();
-        entity.timestamp = dto.timestamp();
+        entity.timestamp = LocalDateTime.parse(dto.timestamp());
         entity.status = "STATUS_SENDING";
         entity.textType = dto.textType().name();
         return entity;
@@ -57,7 +56,7 @@ public final class ConversationUtils {
         //Annoying code to get recipient because MessageDto doesn't contain recipient.
         entity.recipientId = dto.conversationId().split(":")[0].equals(dto.senderId()) ? dto.conversationId().split(":")[1] : dto.conversationId().split(":")[0];
         entity.content = dto.content();
-        entity.timestamp = dto.timestamp().toString();
+        entity.timestamp = dto.timestamp();
         entity.status = "SENT";
         entity.textType = dto.textType().toString();
 
