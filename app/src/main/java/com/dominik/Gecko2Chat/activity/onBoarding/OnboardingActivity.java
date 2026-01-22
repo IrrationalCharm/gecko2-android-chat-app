@@ -1,7 +1,9 @@
 package com.dominik.Gecko2Chat.activity.onBoarding;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -17,6 +19,7 @@ import com.dominik.Gecko2Chat.activity.onBoarding.fragments.UsernameFragment;
 import com.dominik.Gecko2Chat.model.OnBoardingRequestDto;
 import com.dominik.Gecko2Chat.model.api.ApiResponse;
 import com.dominik.Gecko2Chat.model.api.RegistrationApi;
+import com.dominik.Gecko2Chat.model.response.UserDto;
 import com.dominik.Gecko2Chat.rest.RestClient;
 import com.google.android.material.button.MaterialButton;
 
@@ -86,8 +89,7 @@ public class OnboardingActivity extends AppCompatActivity {
     private void updateIndicators(int position) {
         for (int i = 0; i < dotsContainer.getChildCount(); i++) {
             View dot = dotsContainer.getChildAt(i);
-            // This triggers the <selector> in your drawable
-            // True = White (Active), False = Translucent (Inactive)
+
             dot.setSelected(i == position);
 
             float scale = (i == position) ? 1.2f : 1.0f;
@@ -150,36 +152,39 @@ public class OnboardingActivity extends AppCompatActivity {
         var OnBoardingRequestDto = new OnBoardingRequestDto(username, displayName, null, null, null);
         String finalProfileImageUri = profileImageUri; // To use inside call
 
-        registrationApi.registerUser(OnBoardingRequestDto).enqueue(new Callback<>() {
+        registrationApi.registerUser(OnBoardingRequestDto).enqueue(new Callback<ApiResponse<UserDto>>() {
            @Override
-           public void onResponse(Call<ApiResponse<String>> call, Response<ApiResponse<String>> response) {
+           public void onResponse(Call<ApiResponse<UserDto>> call, Response<ApiResponse<UserDto>> response) {
                if (response.isSuccessful() && response.body() != null) {
                    if (finalProfileImageUri != null && finalProfileImageUri.isEmpty())
                        uploadProfilePicture(finalProfileImageUri);
 
+                   Toast.makeText(OnboardingActivity.this, "Setup Complete!", Toast.LENGTH_SHORT).show();
                    goToMainActivity();
                } else {
+                   Log.e("OnboardingActivity", "Onboarding failed, response body is null");
                    Toast.makeText(OnboardingActivity.this, "Onboarding failed, please try again", Toast.LENGTH_SHORT).show();
                }
                showLoading(false);
            }
 
            @Override
-           public void onFailure(Call<ApiResponse<String>> call, Throwable t) {
+           public void onFailure(Call<ApiResponse<UserDto>> call, Throwable t) {
                 showLoading(false);
+                Log.e("OnboardingActivity", "Onboarding failed, network error", t);
                 Toast.makeText(OnboardingActivity.this, "Onboarding failed, please try again", Toast.LENGTH_SHORT).show();
            }
         });
 
 
-        Toast.makeText(this, "Setup Complete!", Toast.LENGTH_SHORT).show();
+
         // startActivity(new Intent(this, MainActivity.class));
         // finish();
     }
 
     private void goToMainActivity() {
         showLoading(false);
-        startActivity(new Intent(this, MainActivity.class));
+        startActivity(new Intent(this, MainActivity.class).putExtra("justOnboarded", true));
         finish();
     }
 

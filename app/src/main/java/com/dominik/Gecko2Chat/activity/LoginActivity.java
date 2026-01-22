@@ -109,7 +109,10 @@ public class LoginActivity extends AppCompatActivity {
                         serviceConfig, // the authorization service configuration
                         CLIENT_ID, // the client ID, typically pre-registered and static
                         ResponseTypeValues.CODE, // the response_type value: we want a code
-                        Uri.parse(REDIRECT_URI)).setScope(SCOPE).build();
+                        Uri.parse(REDIRECT_URI))
+                        .setScope(SCOPE)
+                        .setPrompt("login") //Forces user to login even if browser has valid token.
+                        .build();
 
         // --- NEW: Custom Tab Styling ---
         CustomTabsIntent.Builder intentBuilder = new CustomTabsIntent.Builder();

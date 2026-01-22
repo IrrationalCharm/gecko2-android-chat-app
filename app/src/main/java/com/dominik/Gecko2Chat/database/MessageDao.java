@@ -6,10 +6,8 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
-
-import io.reactivex.Single;
 
 @Dao
 public interface MessageDao {
@@ -20,7 +18,7 @@ public interface MessageDao {
 
     //Returns true if there are ANY messages older than the given timestamp
     @Query("SELECT COUNT(*) > 0 FROM messages WHERE conversationId = :conversationId AND timestamp < :timestamp")
-    boolean hasMessagesBefore(String conversationId, LocalDateTime timestamp);
+    boolean hasMessagesBefore(String conversationId, Instant timestamp);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertMessage(MessageEntity message);

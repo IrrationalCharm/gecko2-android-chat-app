@@ -1,10 +1,10 @@
 package com.dominik.Gecko2Chat.model.response;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record LastMessageDto(
         String senderId,
         String content,
-        LocalDateTime timestamp
+        Instant timestamp
 ) {
 }

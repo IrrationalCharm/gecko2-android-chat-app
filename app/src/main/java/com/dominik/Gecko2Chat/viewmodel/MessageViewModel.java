@@ -1,7 +1,6 @@
 package com.dominik.Gecko2Chat.viewmodel;
 
 import android.app.Application;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -14,21 +13,16 @@ import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.dominik.Gecko2Chat.utils.ConversationUtils;
 import com.dominik.Gecko2Chat.utils.UserManager;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
 
 public class MessageViewModel extends AndroidViewModel {
 
     private final MessageRepository repository;
-
-    private final CompositeDisposable disposable = new CompositeDisposable();
-
     private final MutableLiveData<Integer> messageLimit = new MutableLiveData<>(20);
     private LiveData<List<MessageModel>> messageList = new MutableLiveData<>(new ArrayList<>());
+    private boolean isLoading = false;
     //private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
 
     private String myId;
@@ -67,17 +61,22 @@ public class MessageViewModel extends AndroidViewModel {
 
 
     public void loadNextPage(String friendId) {
-        List<MessageModel> currentList = messageList.getValue();
+        if (isLoading) return;
 
+        List<MessageModel> currentList = messageList.getValue();
         if (currentList == null || currentList.isEmpty()) return;
 
-        LocalDateTime oldestTimestamp = currentList.get(0).timestamp();
+        isLoading = true;
+
+        Instant oldestTimestamp = currentList.get(0).timestamp();
         repository.loadMoreHistory(friendId, oldestTimestamp);
 
         Integer currentLimit = messageLimit.getValue();
         if (currentLimit != null) {
             messageLimit.setValue(currentLimit + 20);
         }
+
+        isLoading = false;
     }
 
 

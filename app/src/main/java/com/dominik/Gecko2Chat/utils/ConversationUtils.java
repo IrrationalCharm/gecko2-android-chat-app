@@ -6,8 +6,7 @@ import com.dominik.Gecko2Chat.model.MessageModel;
 import com.dominik.Gecko2Chat.model.response.MessageDto;
 import com.dominik.Gecko2Chat.model.response.websocket.ChatMessageDto;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import java.time.Instant;
 
 public final class ConversationUtils {
 
@@ -41,7 +40,7 @@ public final class ConversationUtils {
         entity.senderId = dto.senderId();
         entity.recipientId = dto.recipientId();
         entity.content = dto.content();
-        entity.timestamp = LocalDateTime.parse(dto.timestamp());
+        entity.timestamp = Instant.parse(dto.timestamp());
         entity.status = "STATUS_SENDING";
         entity.textType = dto.textType().name();
         return entity;

@@ -17,6 +17,7 @@ import com.dominik.Gecko2Chat.model.response.websocket.ChatMessageDto;
 import com.dominik.Gecko2Chat.model.response.websocket.PrivateMessage;
 import com.dominik.Gecko2Chat.model.response.websocket.adapter.PrivateMessageDeserializer;
 import com.dominik.Gecko2Chat.repository.MainRepository;
+import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -34,7 +35,9 @@ import io.reactivex.schedulers.Schedulers;
 
 public class MainViewModel extends AndroidViewModel {
 
-    private final MainRepository repository;
+    //private final MainRepository repository;
+    private final MessageRepository messageRepository;
+
 
     private final MutableLiveData<List<ChatModel>> chatList = new MutableLiveData<>();
     // Using PublicUserResponseDto for contacts, or map to a ContactModel if you prefer
@@ -51,18 +54,13 @@ public class MainViewModel extends AndroidViewModel {
     public MainViewModel(@NonNull Application application) {
         super(application);
         // Initialize Repository with Application Context
-        repository = MainRepository.getInstance(application);
-        initWebsocketListener();
+        //repository = MainRepository.getInstance(application);
+        messageRepository = MessageRepository.getInstance(application);
+
+
     }
 
-    private void initWebsocketListener() {
-        Disposable d = WebSocketManager.getInstance().getMessageStream()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread()) // Process on Main Thread to update LiveData safely
-                .subscribe(this::handleIncomingMessage, Throwable::printStackTrace);
 
-        compositeDisposable.add(d);
-    }
 
 
     private void handleIncomingMessage(String json) {
@@ -127,8 +125,7 @@ public class MainViewModel extends AndroidViewModel {
             }
         });
 
-
-        repository.getStartupData(tempObserver, errorMessage);
+        //repository.getStartupData(tempObserver, errorMessage);
     }
 
     private void mapDataToUi(StartupDto dto) {

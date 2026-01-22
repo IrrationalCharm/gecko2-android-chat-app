@@ -34,11 +34,6 @@ public class ChatsFragment extends Fragment {
     private MainViewModel viewModel;
 
 
-
-    public ChatsFragment() {
-        // Required empty public constructor
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -82,7 +77,7 @@ public class ChatsFragment extends Fragment {
         // 4. Observe Errors (Optional)
         viewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
             if (error != null) {
-                Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
             }
         });
 

@@ -5,8 +5,6 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 
 @Entity(tableName = "messages")
 public class MessageEntity {
@@ -19,7 +17,7 @@ public class MessageEntity {
     public String senderId;
     public String recipientId;
     public String content;
-    public LocalDateTime timestamp; // Store as epoch time
+    public Instant timestamp; // Store as epoch time
     public String status;    // Store Enum as String
     public String textType;  // Store Enum as String
 

@@ -46,7 +46,6 @@ public class ContactsFragment extends Fragment {
         adapter = new ContactAdapter(contactList);
         recyclerView.setAdapter(adapter);
 
-
         return view;
     }
 

@@ -4,9 +4,12 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.dominik.Gecko2Chat.model.api.KeycloakApi;
+import com.dominik.Gecko2Chat.rest.RestClient;
 import com.dominik.Gecko2Chat.utils.AuthStateManager;
 import com.dominik.Gecko2Chat.utils.UserManager;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
@@ -16,10 +19,18 @@ import net.openid.appauth.AuthState;
 import net.openid.appauth.AuthorizationService;
 import net.openid.appauth.connectivity.ConnectionBuilder;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 
-public class BaseActivity extends AppCompatActivity {
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+
+public abstract class BaseActivity extends AppCompatActivity {
 
     private AuthorizationService authService;
     protected AuthStateManager authStateManager;
@@ -59,7 +70,11 @@ public class BaseActivity extends AppCompatActivity {
             return;
         }
 
-        // 2. "Smart" Check: Checks expiration -> Refreshes if needed -> Returns Token
+        //We need fresh ID Tokens if we just created the account.
+        if(getIntent().getBooleanExtra("justOnboarded", false)) {
+            state.setNeedsTokenRefresh(true);
+        }
+
         state.performActionWithFreshTokens(authService, (accessToken, idToken, ex) -> {
             if (ex != null) {
                 // This block runs if the Refresh Token is expired or revoked.
@@ -69,8 +84,9 @@ public class BaseActivity extends AppCompatActivity {
             }
 
             authStateManager.updateAuthState(state);
+            userManager.saveUserFromIdToken(idToken);
 
-            // 4. NOW it is safe to connect the WebSocket
+            //Connect to websocket
             if (accessToken != null) {
                 WebSocketManager.getInstance().connect(accessToken);
             }
@@ -78,7 +94,7 @@ public class BaseActivity extends AppCompatActivity {
     }
 
 
-    // Helper to allow HTTP connections
+    //Helper to allow non-secure HTTP connections
     private AppAuthConfiguration createAuthConfig() {
         ConnectionBuilder connectionBuilder = uri -> {
             URL url = new URL(uri.toString());
@@ -90,8 +106,10 @@ public class BaseActivity extends AppCompatActivity {
     }
 
 
-    private void performLogout() {
+    public void performLogout() {
         WebSocketManager.getInstance().disconnect();
+        revokeToken();
+
         userManager.clearUser();
         authStateManager.clearAuthState();
 
@@ -100,6 +118,37 @@ public class BaseActivity extends AppCompatActivity {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+
+    private void revokeToken() {
+        var retrofit = new Retrofit.Builder()
+                .baseUrl("http://192.168.1.134:8080") //Keycloak IP, to be changed later
+                .build();
+        KeycloakApi keycloakApi = retrofit.create(KeycloakApi.class);
+
+
+        AuthState state = authStateManager.getAuthState();
+        String refreshToken = state.getRefreshToken();
+
+        if (refreshToken == null) return;
+
+        keycloakApi.revokeToken("gecko2-android-client", refreshToken, "refresh_token").enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Log.d("BaseActivity", "Successfully revoked token");
+                    return;
+                }
+
+                Log.e("BaseActivity", "Failed to revoke token");
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                Log.e("BaseActivity", "Failed to revoke token", t);
+            }
+        });
     }
 
 }

@@ -2,7 +2,7 @@ package com.dominik.Gecko2Chat.model.response;
 
 import com.dominik.Gecko2Chat.enums.TextType;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 //These are messages retrieved from messaging-persistence-service via REST (history messages) not to be confused with websocket messages.
 public record MessageDto(
@@ -11,7 +11,7 @@ public record MessageDto(
         String conversationId,
         String senderId,
         String content,
-        LocalDateTime timestamp,
+        Instant timestamp,
         TextType textType
 ) {
 }

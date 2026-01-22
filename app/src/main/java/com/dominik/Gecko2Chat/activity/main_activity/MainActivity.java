@@ -13,6 +13,7 @@ import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.BaseActivity;
 import com.dominik.Gecko2Chat.activity.main_activity.fragments.ChatsFragment;
 import com.dominik.Gecko2Chat.activity.main_activity.fragments.ContactsFragment;
+import com.dominik.Gecko2Chat.activity.main_activity.fragments.ProfileFragment;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.dominik.Gecko2Chat.viewmodel.MainViewModel;
 import com.google.android.material.card.MaterialCardView;
@@ -24,7 +25,7 @@ public class MainActivity extends BaseActivity {
 
     private final Fragment chatsFragment = new ChatsFragment();
     private final Fragment contactFragment = new ContactsFragment();
-    //private final Fragment profileFragment = new ProfileFragment();
+    private final Fragment profileFragment = new ProfileFragment();
     private TextView navContacts, navChats, tvProfileText;
     private MaterialCardView cvProfileImage;
     private MainViewModel viewModel;
@@ -49,9 +50,6 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        var disposable = WebSocketManager.getInstance().getConnectionStatus()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(MainActivity::updateConnectionBanner);
     }
 
     private static void updateConnectionBanner(WebSocketManager.ConnectionStatus status) {
@@ -126,6 +124,7 @@ public class MainActivity extends BaseActivity {
         cvProfileImage = findViewById(R.id.cvProfileImage);
     }
 
+
     private void initListeners() {
 
         navChats.setOnClickListener(v -> {
@@ -136,7 +135,13 @@ public class MainActivity extends BaseActivity {
             loadFragment(contactFragment);
             updateMenuUI(Tabs.CONTACTS);
         });
+
+        cvProfileImage.setOnClickListener(v -> {
+            loadFragment(profileFragment);
+            updateMenuUI(Tabs.PROFILE);
+        });
     }
+
 
     private enum Tabs {
         CHATS,

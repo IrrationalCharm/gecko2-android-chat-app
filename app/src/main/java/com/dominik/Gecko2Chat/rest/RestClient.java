@@ -2,6 +2,7 @@ package com.dominik.Gecko2Chat.rest;
 
 import android.content.Context;
 
+import com.dominik.Gecko2Chat.model.api.KeycloakApi;
 import com.dominik.Gecko2Chat.model.api.MessageApi;
 import com.dominik.Gecko2Chat.model.api.RegistrationApi;
 import com.dominik.Gecko2Chat.model.api.UserApi;
@@ -11,8 +12,7 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
 
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
@@ -30,10 +30,10 @@ public class RestClient {
                 .addInterceptor(new AuthInterceptor(context))
                 .build();
 
-        //Helps convert to LocalDateTime
+        //Helps convert to Instant
         Gson gson = new GsonBuilder()
-                .registerTypeAdapter(LocalDateTime.class, (JsonDeserializer<LocalDateTime>) (json, type, jsonDeserializationContext) -> LocalDateTime.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME))
-                .registerTypeAdapter(LocalDateTime.class, (JsonSerializer<LocalDateTime>) (src, typeOfSrc, c) -> new JsonPrimitive(src.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
+                .registerTypeAdapter(Instant.class, (JsonDeserializer<Instant>) (json, type, ctx) -> Instant.parse(json.getAsString()))
+                .registerTypeAdapter(Instant.class, (JsonSerializer<Instant>) (src, type, ctx) -> new JsonPrimitive(src.toString()))
                 .create();
 
         this.retrofit = new Retrofit.Builder()
@@ -55,12 +55,9 @@ public class RestClient {
         return retrofit.create(RegistrationApi.class);
     }
 
-    public UserApi getUserApi() {
-        return retrofit.create(UserApi.class);
-    }
+    public UserApi getUserApi() {return retrofit.create(UserApi.class);}
 
-    public MessageApi getMessagesApi() {
-        return retrofit.create(MessageApi.class);
-    }
+    public MessageApi getMessagesApi() { return retrofit.create(MessageApi.class);}
 
+    public KeycloakApi getKeycloakApi() { return retrofit.create(KeycloakApi.class);}
 }

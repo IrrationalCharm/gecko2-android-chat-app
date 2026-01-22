@@ -3,7 +3,6 @@ package com.dominik.Gecko2Chat.model.api;
 
 import com.dominik.Gecko2Chat.model.response.MessageHistoryDto;
 
-import java.time.LocalDateTime;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -20,7 +19,7 @@ public interface MessageApi {
     @GET("/message-persistence-service/chat/conversation/{friendId}")
     Call<ApiResponse<MessageHistoryDto>> getConversation(
             @Path("friendId") String friendId,
-            @Query("before") LocalDateTime beforeTimestamp, // epoch
+            @Query("before") long timestamp, // epoch
             @Query("size") int size
     );
 

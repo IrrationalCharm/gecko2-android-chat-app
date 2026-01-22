@@ -6,6 +6,7 @@ import android.util.Log;
 import androidx.lifecycle.LiveData;
 
 import com.dominik.Gecko2Chat.database.AppDatabase;
+import com.dominik.Gecko2Chat.database.DateConverter;
 import com.dominik.Gecko2Chat.database.MessageDao;
 import com.dominik.Gecko2Chat.database.MessageEntity;
 import com.dominik.Gecko2Chat.enums.PrivateMessageType;
@@ -24,7 +25,7 @@ import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -80,10 +81,7 @@ public class MessageRepository {
             PrivateMessage dto = gson.fromJson(json, PrivateMessage.class);
 
             switch(dto) {
-                case MessageReceivedDto messageReceivedDto -> {
-                    Log.i("MessageRepository", "Message acknowledged by server received: " + messageReceivedDto.uuid());
-
-                }
+                case MessageReceivedDto messageReceivedDto -> Log.i("MessageRepository", "Message acknowledged by server received: " + messageReceivedDto.uuid());
 
                 case ChatMessageDto messageDto -> {
                     Log.i("MessageRepository", "Message received: " + messageDto.content());
@@ -93,7 +91,7 @@ public class MessageRepository {
                     mEntity.senderId = messageDto.senderId();
                     mEntity.recipientId = messageDto.recipientId();
                     mEntity.content = messageDto.content();
-                    mEntity.timestamp = LocalDateTime.parse(messageDto.timestamp());
+                    mEntity.timestamp = Instant.parse(messageDto.timestamp());
                     mEntity.textType = messageDto.textType().toString();
 
                     executor.execute(() -> messageDao.insertMessage(mEntity));
@@ -123,7 +121,7 @@ public class MessageRepository {
                 TextType.TEXT,
                 PrivateMessageType.CHAT_MESSAGE,
                 content,
-                LocalDateTime.now().toString()
+                Instant.now().toString()
         );
 
         String json = gson.toJson(dto);
@@ -137,7 +135,7 @@ public class MessageRepository {
 
     }
 
-    public void loadMoreHistory(String friendId, LocalDateTime oldestTimestamp) {
+    public void loadMoreHistory(String friendId, Instant oldestTimestamp) {
         executor.execute(() -> {
             boolean hasLocalHistory = messageDao.hasMessagesBefore(currentConversationId, oldestTimestamp);
 
@@ -151,8 +149,10 @@ public class MessageRepository {
         });
     }
 
-    private void fetchAndInsertMessages(String friendId, LocalDateTime beforeTime) {
-        messageApi.getConversation(friendId, beforeTime, 20).enqueue(new Callback<ApiResponse<MessageHistoryDto>>() {
+    private void fetchAndInsertMessages(String friendId, Instant beforeTime) {
+        long epoch = DateConverter.dateToTimestamp(beforeTime);
+
+        messageApi.getConversation(friendId, epoch, 20).enqueue(new Callback<ApiResponse<MessageHistoryDto>>() {
             @Override
             public void onResponse(Call<ApiResponse<MessageHistoryDto>> call, Response<ApiResponse<MessageHistoryDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {
