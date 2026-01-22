@@ -74,12 +74,5 @@ public class ChatsFragment extends Fragment {
             // Toggle your ProgressBar visibility here
         });
 
-        // 4. Observe Errors (Optional)
-        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
-            if (error != null) {
-                //Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
-            }
-        });
-
     }
 }

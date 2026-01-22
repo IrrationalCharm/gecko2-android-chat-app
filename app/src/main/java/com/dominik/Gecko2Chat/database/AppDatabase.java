@@ -10,10 +10,11 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
 
-@Database(entities = {MessageEntity.class}, version = 1)
+@Database(entities = {MessageEntity.class, FriendEntity.class}, version = 1)
 @TypeConverters({DateConverter.class})
 public abstract class AppDatabase extends RoomDatabase {
     public abstract MessageDao messageDao();
+    public abstract FriendDao friendDao();
 
     private static volatile AppDatabase INSTANCE;
 

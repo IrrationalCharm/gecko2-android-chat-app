@@ -6,7 +6,7 @@ import java.util.Set;
 public record ConversationSummaryDto(
         String conversationId,
         Set<String> participants,
-        LastMessageDto lastMessage,
+        MessageDto lastMessage,
         Instant updatedAt
 ) {
 }

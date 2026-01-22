@@ -12,7 +12,7 @@ import java.util.List;
 @Dao
 public interface MessageDao {
 
-    // 1. Get all messages for a chat
+    //Get all messages for a chat
     @Query("SELECT * FROM messages WHERE conversationId = :friendId ORDER BY timestamp DESC LIMIT :limit")
     LiveData<List<MessageEntity>> getMessagesForChat(String friendId, int limit);
 
@@ -26,8 +26,12 @@ public interface MessageDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<MessageEntity> messages);
 
-    // 4. Get most recent message for every chat (For MainActivity list)
-    // This is a simplified query; usually, you group by chatId.
-    @Query("SELECT * FROM messages GROUP BY conversationId ORDER BY timestamp DESC")
+    //Get the last message of each chat
+    @Query("""
+            SELECT m.* FROM messages m
+            INNER JOIN (SELECT conversationId, MAX(timestamp) as max_ts FROM messages GROUP BY conversationId) latest
+            ON m.conversationId = latest.conversationId AND m.timestamp = latest.max_ts
+            ORDER BY m.timestamp DESC
+            """)
     LiveData<List<MessageEntity>> getRecentChats();
 }

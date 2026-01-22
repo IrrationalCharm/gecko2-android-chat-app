@@ -109,9 +109,7 @@ public class MessageRepository {
         }
     }
 
-    public LiveData<List<MessageEntity>> getMessagesForChat(String conversationId, int limit) {
-        return messageDao.getMessagesForChat(conversationId, limit);
-    }
+
 
     public void sendMessage(String myId, String currentFriendId, String content) {
         var dto = new ChatMessageDto(
@@ -139,7 +137,7 @@ public class MessageRepository {
         executor.execute(() -> {
             boolean hasLocalHistory = messageDao.hasMessagesBefore(currentConversationId, oldestTimestamp);
 
-            if(hasLocalHistory) {
+            if (hasLocalHistory) {
                 Log.i("MessageRepository", "Loading local history");
                 return;
             }
@@ -178,6 +176,14 @@ public class MessageRepository {
                 Log.e("MessageRepository", "Network Failure: " + t.getMessage());
             }
         });
+    }
+
+    public LiveData<List<MessageEntity>> getMessagesForChat(String conversationId, int limit) {
+        return messageDao.getMessagesForChat(conversationId, limit);
+    }
+
+    public LiveData<List<MessageEntity>> getRecentChats() {
+        return messageDao.getRecentChats();
     }
 
     public void setCurrentConversationId(String currentConversationId) {
