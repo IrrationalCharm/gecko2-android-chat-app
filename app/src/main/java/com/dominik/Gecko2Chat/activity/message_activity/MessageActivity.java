@@ -53,7 +53,7 @@ public class MessageActivity extends BaseActivity {
             adapter.setMessages(messages);
 
             if (oldSize == 0) {
-                rvChatMessages.scrollToPosition(adapter.getItemCount() - 1);
+                rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
             } else if (messages.size() > oldSize && !isUserAtBottom()) {
                 rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
             }

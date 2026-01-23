@@ -13,7 +13,7 @@ import java.util.List;
 public interface MessageDao {
 
     //Get all messages for a chat
-    @Query("SELECT * FROM messages WHERE conversationId = :friendId ORDER BY timestamp DESC LIMIT :limit")
+    @Query("SELECT * FROM (SELECT * FROM messages WHERE conversationId = :friendId ORDER BY timestamp DESC LIMIT :limit) ORDER BY timestamp ASC")
     LiveData<List<MessageEntity>> getMessagesForChat(String friendId, int limit);
 
     //Returns true if there are ANY messages older than the given timestamp

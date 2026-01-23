@@ -8,8 +8,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.dominik.Gecko2Chat.database.AppDatabase;
 import com.dominik.Gecko2Chat.model.api.KeycloakApi;
-import com.dominik.Gecko2Chat.rest.RestClient;
 import com.dominik.Gecko2Chat.utils.AuthStateManager;
 import com.dominik.Gecko2Chat.utils.UserManager;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
@@ -19,11 +19,10 @@ import net.openid.appauth.AuthState;
 import net.openid.appauth.AuthorizationService;
 import net.openid.appauth.connectivity.ConnectionBuilder;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -112,6 +111,10 @@ public abstract class BaseActivity extends AppCompatActivity {
 
         userManager.clearUser();
         authStateManager.clearAuthState();
+
+        try( ExecutorService executor = Executors.newSingleThreadExecutor() ) {
+            executor.execute(() -> AppDatabase.getInstance(this).clearAllTables());
+        }
 
         Intent intent = new Intent(this, LoginActivity.class);
         //Avoid user pressing back

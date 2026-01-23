@@ -1,7 +1,6 @@
 package com.dominik.Gecko2Chat.viewmodel;
 
 import android.app.Application;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -13,23 +12,12 @@ import com.dominik.Gecko2Chat.database.FriendEntity;
 import com.dominik.Gecko2Chat.database.MessageEntity;
 import com.dominik.Gecko2Chat.model.ChatModel;
 import com.dominik.Gecko2Chat.model.ContactModel;
-import com.dominik.Gecko2Chat.model.response.ConversationSummaryDto;
-import com.dominik.Gecko2Chat.model.response.PublicUserResponseDto;
-import com.dominik.Gecko2Chat.model.response.StartupDto;
-import com.dominik.Gecko2Chat.model.response.websocket.ChatMessageDto;
-import com.dominik.Gecko2Chat.model.response.websocket.PrivateMessage;
-import com.dominik.Gecko2Chat.model.response.websocket.adapter.PrivateMessageDeserializer;
 import com.dominik.Gecko2Chat.repository.MainRepository;
 import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.dominik.Gecko2Chat.utils.UserManager;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import java.util.Optional;
-import java.util.Set;
 
 public class MainViewModel extends AndroidViewModel {
 
@@ -64,6 +52,7 @@ public class MainViewModel extends AndroidViewModel {
 
     private void updateChatList(List<MessageEntity> chats, List<FriendEntity> friends) {
         if (chats == null || chats.isEmpty()) return;
+        if (friends == null || friends.isEmpty()) return;
 
         List<ChatModel> currentList = chatList.getValue();
         if (currentList == null) currentList = new ArrayList<>();
@@ -80,21 +69,20 @@ public class MainViewModel extends AndroidViewModel {
             String name = "Unknown";
             String avatar = null;
 
-            if (friends != null) {
-                for (FriendEntity f : friends) {
-                    if (f.internalId.equals(otherUserId)) {
-                        name = f.displayName;
-                        avatar = f.profileImageUrl;
-                        break;
 
-                    }
+            for (FriendEntity f : friends) {
+                if (f.internalId.equals(otherUserId)) {
+                    name = f.displayName;
+                    avatar = f.profileImageUrl;
+                    break;
+
                 }
             }
+
             newUiList.removeIf(chatModel -> chatModel.friendId().equals(otherUserId));
 
             newUiList.add(new ChatModel(name, otherUserId, msg.content, msg.timestamp.toString(), avatar));
         }
-
 
         chatList.setValue(newUiList);
     }
