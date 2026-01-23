@@ -11,12 +11,15 @@ import com.dominik.Gecko2Chat.database.FriendDao;
 import com.dominik.Gecko2Chat.database.FriendEntity;
 import com.dominik.Gecko2Chat.database.MessageDao;
 import com.dominik.Gecko2Chat.database.MessageEntity;
+import com.dominik.Gecko2Chat.model.User;
 import com.dominik.Gecko2Chat.model.api.ApiResponse;
 import com.dominik.Gecko2Chat.model.api.UserApi;
 import com.dominik.Gecko2Chat.model.response.ConversationSummaryDto;
 import com.dominik.Gecko2Chat.model.response.StartupDto;
 import com.dominik.Gecko2Chat.rest.RestClient;
 import com.dominik.Gecko2Chat.utils.ConversationUtils;
+import com.dominik.Gecko2Chat.utils.UserManager;
+import com.dominik.Gecko2Chat.utils.mapper.UserMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +33,7 @@ import retrofit2.Response;
 public class MainRepository {
 
     private static MainRepository instance;
+    UserManager userManager;
     private UserApi userApi;
     private MessageDao messageDao;
     private FriendDao friendDao;
@@ -40,6 +44,8 @@ public class MainRepository {
     private MainRepository(Context context) {
         userApi = RestClient.getInstance(context).getUserApi();
         AppDatabase db = AppDatabase.getInstance(context);
+        userManager = UserManager.getInstance(context);
+
         messageDao = db.messageDao();
         friendDao = db.friendDao();
     }
@@ -51,6 +57,13 @@ public class MainRepository {
         return instance;
     }
 
+
+    /**
+     * Makes a request to the server to refresh the startup data. Includes:
+     *      - the last message of each conversation
+     *      - the list of friends
+     *      - Logged-in User data
+     */
     public void refreshStartupData() {
         userApi.getStartup().enqueue(new Callback<ApiResponse<StartupDto>>() {
             @Override
@@ -59,16 +72,34 @@ public class MainRepository {
                     StartupDto data = response.body().data();
 
                     executor.execute(() -> {
-                        List<FriendEntity> friends = data.friendsList().stream()
-                                .map(friend -> new FriendEntity(friend.internalId(), friend.username(), friend.displayName(), friend.profileBio(), friend.profileImageUrl()))
-                                .toList();
-                        friendDao.insertAll(friends);
+
+                        //Map and save friends
+                        if (data.friendsList() != null) {
+                            List<FriendEntity> friends = data.friendsList().stream()
+                                    .map(friend -> new FriendEntity(friend.internalId(), friend.username(), friend.displayName(), friend.profileBio(), friend.profileImageUrl()))
+                                    .toList();
+                            friendDao.insertAll(friends);
+
+                        } else Log.e("MainRepository", "Friends list is null");
 
 
-                        List<MessageEntity> messages = data.conversationSummary().stream()
-                                .map(conv -> ConversationUtils.mapMessageDtoToMessageEntity(conv.lastMessage()))
-                                .toList();
-                        messageDao.insertAll(messages);
+                        //Map and save last messages of each conversation
+                        if (data.conversationSummary() != null) {
+                            List<MessageEntity> messages = data.conversationSummary().stream()
+                                    .map(conv -> ConversationUtils.mapMessageDtoToMessageEntity(conv.lastMessage()))
+                                    .toList();
+                            messageDao.insertAll(messages);
+
+                        } else Log.e("MainRepository", "Last messages list is null");
+
+
+                        //Save logged-in user data into SharedPreferences
+                        if (data.userDto() != null) {
+                            User user = UserMapper.mapDtoToUser(data.userDto(), true);
+                            userManager.saveUser(user);
+
+                        } else Log.e("MainRepository", "User data is null");
+
 
                         Log.d("MainRepository", "Startup data refreshed");
                     });

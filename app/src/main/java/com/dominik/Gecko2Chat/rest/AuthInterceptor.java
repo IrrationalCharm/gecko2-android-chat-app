@@ -144,7 +144,7 @@ public class AuthInterceptor implements Interceptor {
 
     private void performLogout() {
         // 1. Clear Local Data
-        UserManager userManager = new UserManager(context);
+        UserManager userManager = UserManager.getInstance(context);
         userManager.clearUser();
         authStateManager.clearAuthState();
         WebSocketManager.getInstance().disconnect();

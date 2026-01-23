@@ -64,7 +64,7 @@ public class SplashActivity extends AppCompatActivity {
 
         authService = new AuthorizationService(this, authConfig);
         authStateManager = new AuthStateManager(this);
-        userManager = new UserManager(this);
+        userManager = UserManager.getInstance(this);
     }
 
     private void checkAuthAndNavigate() {

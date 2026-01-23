@@ -84,7 +84,7 @@ public class LoginActivity extends AppCompatActivity {
                     authStateManager.updateAfterTokenResponse(response, ex);
                     Toast.makeText(this, "Login Successful", Toast.LENGTH_SHORT).show();
 
-                    var userManager = new UserManager(this);
+                    var userManager = UserManager.getInstance(this);
                     userManager.saveUserFromIdToken(authStateManager.getAuthState().getIdToken());
 
                     if (userManager.getUser().isOnboarded()) {

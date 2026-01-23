@@ -12,6 +12,7 @@ import com.dominik.Gecko2Chat.database.FriendEntity;
 import com.dominik.Gecko2Chat.database.MessageEntity;
 import com.dominik.Gecko2Chat.model.ChatModel;
 import com.dominik.Gecko2Chat.model.ContactModel;
+import com.dominik.Gecko2Chat.model.User;
 import com.dominik.Gecko2Chat.repository.MainRepository;
 import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.dominik.Gecko2Chat.utils.UserManager;
@@ -28,6 +29,7 @@ public class MainViewModel extends AndroidViewModel {
     private final UserManager userManager;
 
     // The Combined result for the UI
+    private final MutableLiveData<User> currentUser = new MutableLiveData<>();
     private final MediatorLiveData<List<ChatModel>> chatList = new MediatorLiveData<>();
     private final MutableLiveData<List<ContactModel >> contactList = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
@@ -38,17 +40,23 @@ public class MainViewModel extends AndroidViewModel {
         // Initialize Repository with Application Context
         mainRepository = MainRepository.getInstance(application);
         messageRepository = MessageRepository.getInstance(application);
-        userManager = new UserManager(application);
+        userManager = UserManager.getInstance(application);
 
         LiveData<List<FriendEntity>> friendsList = mainRepository.getFriends();
         LiveData<List<MessageEntity>> recentMessageEntities = messageRepository.getRecentChats();
 
 
+        //Listens to changes in friends and messages db, and runs updateChatList if any change event is triggered
         chatList.addSource(friendsList, friends -> updateChatList(recentMessageEntities.getValue(), friendsList.getValue()));
         chatList.addSource(recentMessageEntities, chats -> updateChatList(recentMessageEntities.getValue(), friendsList.getValue()));
 
+        loadCurrentUser();
     }
 
+    private void loadCurrentUser() {
+        User user = userManager.getUser();
+        currentUser.setValue(user);
+    }
 
     private void updateChatList(List<MessageEntity> chats, List<FriendEntity> friends) {
         if (chats == null || chats.isEmpty()) return;
@@ -92,4 +100,10 @@ public class MainViewModel extends AndroidViewModel {
     public LiveData<List<ChatModel>> getChatList() { return chatList; }
     public LiveData<List<ContactModel>> getContactList() { return contactList; }
     public LiveData<Boolean> getIsLoading() { return isLoading; }
+    public LiveData<User> getCurrentUser() { return currentUser; }
+
+    /**
+     * Reloads from SharedPreferences the logged-in user data into LiveData currentUser
+     */
+    public void reloadCurrentUser() { loadCurrentUser(); }
 }

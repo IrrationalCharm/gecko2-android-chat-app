@@ -13,22 +13,41 @@ import java.nio.charset.StandardCharsets;
 
 public class UserManager {
 
-    private static final String PREFS_NAME = "user_prefs";
-    private static final String KEY_MOBILE_NUMBER = "mobile_number";
-    private static final String KEY_PROFILE_BIO = "profile_bio";
-    private static final String KEY_PROFILE_IMAGE_URL = "profile_image_url";
-    private static final String KEY_ONBOARDED = "onboarded";
+    private static volatile UserManager INSTANCE;
+
+    private User cachedUser = null;
+
     private final SharedPreferences prefs;
+    private static final String PREFS_NAME = "user_prefs";
 
     // Keys for saving data
+    private static final String KEY_MOBILE_NUMBER = "mobile_number";
+    private static final String KEY_PROFILE_BIO = "profile_bio";
+    private static final String KEY_DISPLAY_NAME = "display_name";
+    private static final String KEY_PROFILE_IMAGE_URL = "profile_image_url";
+    private static final String KEY_ONBOARDED = "onboarded";
     private static final String KEY_PROVIDER_ID = "sub";
     private static final String KEY_EMAIL = "email";
     private static final String KEY_INTERNAL_ID = "internal_id";
     private static final String KEY_USERNAME = "username";
 
-    public UserManager(Context context) {
+    private UserManager(Context context) {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
+
+
+    public static UserManager getInstance(Context context) {
+        if (INSTANCE == null) {
+            synchronized (UserManager.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new UserManager(context.getApplicationContext());
+                }
+            }
+        }
+
+        return INSTANCE;
+    }
+
 
     /**
      * Extracts details from the ID Token and saves them to SharedPreferences
@@ -58,28 +77,55 @@ public class UserManager {
                     .putBoolean(KEY_ONBOARDED, isOnboarded)
                     .apply();
 
+            cachedUser = null;
         } catch (Exception e) {
             Log.e("UserManager", "Failed to parse ID Token", e);
         }
     }
 
+
+    public void saveUser(User user) {
+        prefs.edit()
+                .putString(KEY_PROVIDER_ID, user.providerId())
+                .putString(KEY_EMAIL, user.email())
+                .putString(KEY_INTERNAL_ID, user.internalId())
+                .putString(KEY_USERNAME, user.username())
+                .putString(KEY_DISPLAY_NAME, user.displayName())
+                .putString(KEY_MOBILE_NUMBER, user.mobileNumber())
+                .putString(KEY_PROFILE_BIO, user.profileBio())
+                .putString(KEY_PROFILE_IMAGE_URL, user.profileImageUrl())
+                .putBoolean(KEY_ONBOARDED, user.isOnboarded())
+
+                .apply();
+    }
+
+
+
     /**
      * Returns the currently logged in User object
      */
     public User getUser() {
-        return new User(
+        if (cachedUser != null) {
+            return cachedUser;
+        }
+
+        User user = new User(
                 prefs.getString(KEY_INTERNAL_ID, ""),
                 prefs.getString(KEY_PROVIDER_ID, ""),
                 prefs.getString(KEY_USERNAME, ""),
+                prefs.getString(KEY_DISPLAY_NAME, ""),
                 prefs.getString(KEY_EMAIL, ""),
                 prefs.getString(KEY_MOBILE_NUMBER, ""),
                 prefs.getString(KEY_PROFILE_BIO, ""),
                 prefs.getString(KEY_PROFILE_IMAGE_URL, ""),
-                prefs.getBoolean(KEY_ONBOARDED, false)
-        );
+                prefs.getBoolean(KEY_ONBOARDED, false));
+
+        cachedUser = user;
+        return user;
     }
 
     public void clearUser() {
         prefs.edit().clear().apply();
+        cachedUser = null;
     }
 }

@@ -3,6 +3,7 @@ package com.dominik.Gecko2Chat.activity.main_activity.fragments;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,15 +12,17 @@ import android.widget.TextView;
 
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.BaseActivity;
+import com.dominik.Gecko2Chat.activity.main_activity.MainActivity;
+import com.dominik.Gecko2Chat.viewmodel.MainViewModel;
 import com.google.android.material.card.MaterialCardView;
 
 
 public class ProfileFragment extends Fragment {
 
     private MaterialCardView cvBtnLogout;
+    private MainViewModel viewModel;
     private TextView tvMyDisplayName;
     private TextView tvMyUsername;
-
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -41,5 +44,20 @@ public class ProfileFragment extends Fragment {
         });
 
         return view;
+    }
+
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+
+        viewModel.getCurrentUser().observe(getViewLifecycleOwner(), user -> {
+            String username = "@" + user.username();
+
+            // Update UI"
+            tvMyDisplayName.setText(user.displayName());
+            tvMyUsername.setText(username);
+        });
     }
 }

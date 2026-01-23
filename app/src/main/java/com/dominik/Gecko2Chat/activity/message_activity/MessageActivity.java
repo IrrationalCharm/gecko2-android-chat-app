@@ -38,7 +38,7 @@ public class MessageActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        myId = new UserManager(this).getUser().internalId();
+        myId = UserManager.getInstance(this).getUser().internalId();
         friendId = getIntent().getStringExtra("FRIEND_ID");
         friendName = getIntent().getStringExtra("FRIEND_NAME");
 

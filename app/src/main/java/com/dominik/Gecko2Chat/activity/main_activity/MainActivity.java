@@ -18,7 +18,6 @@ import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.dominik.Gecko2Chat.viewmodel.MainViewModel;
 import com.google.android.material.card.MaterialCardView;
 
-import io.reactivex.android.schedulers.AndroidSchedulers;
 
 
 public class MainActivity extends BaseActivity {
@@ -41,8 +40,10 @@ public class MainActivity extends BaseActivity {
 
         viewModel = new ViewModelProvider(this).get(MainViewModel.class);
 
-        if (viewModel.getChatList().getValue() == null)
+        if (viewModel.getChatList().getValue() == null) {
             viewModel.fetchStartupData();
+            viewModel.reloadCurrentUser();
+        }
 
         loadFragment(chatsFragment);
     }
@@ -50,6 +51,7 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        viewModel.reloadCurrentUser();
     }
 
     private static void updateConnectionBanner(WebSocketManager.ConnectionStatus status) {

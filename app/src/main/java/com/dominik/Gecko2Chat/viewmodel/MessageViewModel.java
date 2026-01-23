@@ -36,7 +36,7 @@ public class MessageViewModel extends AndroidViewModel {
 
     public MessageViewModel(@NonNull Application application) {
         super(application);
-        userManager = new UserManager(application.getApplicationContext());
+        userManager = UserManager.getInstance(application.getApplicationContext());
         repository = MessageRepository.getInstance(application);
 
     }

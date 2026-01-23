@@ -40,7 +40,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         authStateManager = new AuthStateManager(getApplicationContext());
-        userManager = new UserManager(getApplicationContext());
+        userManager = UserManager.getInstance(this);
         authService = new AuthorizationService(this, createAuthConfig());
     }
 
