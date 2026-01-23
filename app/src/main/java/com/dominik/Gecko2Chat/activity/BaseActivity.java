@@ -10,6 +10,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.dominik.Gecko2Chat.database.AppDatabase;
 import com.dominik.Gecko2Chat.model.api.KeycloakApi;
+import com.dominik.Gecko2Chat.repository.MainRepository;
+import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.dominik.Gecko2Chat.utils.AuthStateManager;
 import com.dominik.Gecko2Chat.utils.UserManager;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
@@ -48,6 +50,9 @@ public abstract class BaseActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         checkAuthAndConnect();
+
+        MessageRepository.getInstance(this).performDeltaSync();
+        MainRepository.getInstance(this).refreshStartupData();
     }
 
 

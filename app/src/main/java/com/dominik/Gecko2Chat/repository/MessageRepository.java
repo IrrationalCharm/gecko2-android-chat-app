@@ -25,6 +25,7 @@ import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -110,6 +111,43 @@ public class MessageRepository {
     }
 
 
+    public void performDeltaSync() {
+
+        executor.execute(() -> { //Room cannot be executed in main thread
+            Instant latestTimestamp = messageDao.getLatestTimestamp();
+            long timestampEpoch = latestTimestamp == null ? 0 : latestTimestamp.toEpochMilli();
+            Log.i("MessageRepository", "Performing delta sync with timestamp: " + timestampEpoch);
+
+            try {
+                //Cannot use .enqueue() because the callback is executed in the main thread, and we need to execute it in a background thread to store the result in Room
+                Response<ApiResponse<List<MessageHistoryDto>>> response = messageApi.getSyncConversation(timestampEpoch).execute();
+
+                if(!response.isSuccessful() || response.body() == null) {
+                    Log.e("MessageRepository", "Error performing delta sync: " + response.code());
+                    return;
+                }
+
+                List<MessageHistoryDto> messages = response.body().data();
+
+                for (MessageHistoryDto dto : messages) {
+
+                    List<MessageEntity> messageEntities = dto.messages().stream()
+                            .map(ConversationUtils::mapMessageDtoToMessageEntity)
+                            .collect(Collectors.toList());
+                    messageDao.insertAll(messageEntities);
+                }
+
+                Log.i("MessageRepository", "Delta sync successful");
+
+            } catch (IOException e) {
+                Log.e("MessageRepository", "Error performing delta sync", e);
+                throw new RuntimeException(e);
+            }
+
+        });
+
+    }
+
 
     public void sendMessage(String myId, String currentFriendId, String content) {
         var dto = new ChatMessageDto(
@@ -193,5 +231,6 @@ public class MessageRepository {
     public void clearCurrentConversationId() {
         this.currentConversationId = null;
     }
+
 
 }

@@ -8,6 +8,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
 
+import com.dominik.Gecko2Chat.database.MessageEntity;
 import com.dominik.Gecko2Chat.model.MessageModel;
 import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.dominik.Gecko2Chat.utils.ConversationUtils;
@@ -49,7 +50,8 @@ public class MessageViewModel extends AndroidViewModel {
 
         repository.setCurrentConversationId(conversationId);
 
-        //whenever "messageLimit" changes, this function runs again. switchMap
+
+        //whenever "messageLimit" changes, this function runs again, which retrieve the messages from db and maps them to MessageModel
         messageList = Transformations.switchMap(messageLimit, limit ->
                 Transformations.map(repository.getMessagesForChat(conversationId, limit),
                         entities -> entities.stream()

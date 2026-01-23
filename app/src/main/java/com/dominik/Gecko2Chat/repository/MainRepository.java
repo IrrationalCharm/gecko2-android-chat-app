@@ -60,7 +60,6 @@ public class MainRepository {
 
     /**
      * Makes a request to the server to refresh the startup data. Includes:
-     *      - the last message of each conversation
      *      - the list of friends
      *      - Logged-in User data
      */
@@ -81,17 +80,6 @@ public class MainRepository {
                             friendDao.insertAll(friends);
 
                         } else Log.e("MainRepository", "Friends list is null");
-
-
-                        //Map and save last messages of each conversation
-                        if (data.conversationSummary() != null) {
-                            List<MessageEntity> messages = data.conversationSummary().stream()
-                                    .map(conv -> ConversationUtils.mapMessageDtoToMessageEntity(conv.lastMessage()))
-                                    .toList();
-                            messageDao.insertAll(messages);
-
-                        } else Log.e("MainRepository", "Last messages list is null");
-
 
                         //Save logged-in user data into SharedPreferences
                         if (data.userDto() != null) {

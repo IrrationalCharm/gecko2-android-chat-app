@@ -96,7 +96,10 @@ public class MainViewModel extends AndroidViewModel {
     }
 
 
-    public void fetchStartupData() { mainRepository.refreshStartupData(); }
+    public void fetchStartupData() {
+        mainRepository.refreshStartupData();
+        loadCurrentUser();
+    }
     public LiveData<List<ChatModel>> getChatList() { return chatList; }
     public LiveData<List<ContactModel>> getContactList() { return contactList; }
     public LiveData<Boolean> getIsLoading() { return isLoading; }

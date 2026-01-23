@@ -34,4 +34,8 @@ public interface MessageDao {
             ORDER BY m.timestamp DESC
             """)
     LiveData<List<MessageEntity>> getRecentChats();
+
+    //Get last message stored in Room
+    @Query("SELECT MAX(timestamp) FROM messages")
+    Instant getLatestTimestamp();
 }
