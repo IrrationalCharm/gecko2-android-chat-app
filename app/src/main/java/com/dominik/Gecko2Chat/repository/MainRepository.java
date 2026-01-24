@@ -85,7 +85,6 @@ public class MainRepository {
                         if (data.userDto() != null) {
                             User user = UserMapper.mapDtoToUser(data.userDto(), true);
                             userManager.saveUser(user);
-
                         } else Log.e("MainRepository", "User data is null");
 
 

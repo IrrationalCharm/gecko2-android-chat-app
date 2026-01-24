@@ -38,6 +38,7 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")
     implementation("androidx.lifecycle:lifecycle-livedata:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-process:2.10.0")
     implementation("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
     // RxJava required by the above library
     implementation("io.reactivex.rxjava2:rxjava:2.2.5")

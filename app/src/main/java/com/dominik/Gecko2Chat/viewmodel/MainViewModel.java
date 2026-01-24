@@ -95,18 +95,17 @@ public class MainViewModel extends AndroidViewModel {
         chatList.setValue(newUiList);
     }
 
-
+    /**
+     * Refreshes friends list and User data
+     * Reloads from SharedPreferences the logged-in user data into LiveData currentUser
+     */
     public void fetchStartupData() {
         mainRepository.refreshStartupData();
-        loadCurrentUser();
     }
     public LiveData<List<ChatModel>> getChatList() { return chatList; }
     public LiveData<List<ContactModel>> getContactList() { return contactList; }
     public LiveData<Boolean> getIsLoading() { return isLoading; }
     public LiveData<User> getCurrentUser() { return currentUser; }
 
-    /**
-     * Reloads from SharedPreferences the logged-in user data into LiveData currentUser
-     */
-    public void reloadCurrentUser() { loadCurrentUser(); }
+
 }

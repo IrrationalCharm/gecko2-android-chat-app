@@ -5,6 +5,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -17,6 +19,8 @@ import androidx.core.content.ContextCompat;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.main_activity.MainActivity;
 import com.dominik.Gecko2Chat.activity.onBoarding.OnboardingActivity;
+import com.dominik.Gecko2Chat.repository.MainRepository;
+import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.dominik.Gecko2Chat.utils.AuthStateManager;
 import com.dominik.Gecko2Chat.utils.UserManager;
 import com.google.android.material.button.MaterialButton;
@@ -47,6 +51,8 @@ public class LoginActivity extends AppCompatActivity {
 
     private Button loginBtn;
     private MaterialButton googleLoginBtn;
+    private LinearLayout buttonsContainer;
+    private ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +69,9 @@ public class LoginActivity extends AppCompatActivity {
             result -> {
                 // Handle the result of the authorization request
                 if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    // SHOW LOADING UI IMMEDIATELY
+                    showLoading(true);
+
                     Intent data = result.getData();
                     AuthorizationResponse resp = AuthorizationResponse.fromIntent(data);
                     AuthorizationException ex = AuthorizationException.fromIntent(data);
@@ -74,6 +83,8 @@ public class LoginActivity extends AppCompatActivity {
                     } else if (ex != null) {
                         Toast.makeText(this, "Login Failed: " + ex.error, Toast.LENGTH_SHORT).show();
                     }
+                } else {
+                    showLoading(false);
                 }
             }
     );
@@ -82,12 +93,22 @@ public class LoginActivity extends AppCompatActivity {
         authService.performTokenRequest(resp.createTokenExchangeRequest(),
                 (response, ex) -> {
                     authStateManager.updateAfterTokenResponse(response, ex);
-                    Toast.makeText(this, "Login Successful", Toast.LENGTH_SHORT).show();
 
+                    if (ex != null) {
+                        // Network/Exchange failed, show buttons again
+                        showLoading(false);
+                        Toast.makeText(this, "Login Failed during exchange", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    Toast.makeText(this, "Login Successful", Toast.LENGTH_SHORT).show();
                     var userManager = UserManager.getInstance(this);
                     userManager.saveUserFromIdToken(authStateManager.getAuthState().getIdToken());
 
                     if (userManager.getUser().isOnboarded()) {
+                        MainRepository.getInstance(this).refreshStartupData();
+                        MessageRepository.getInstance(this).performDeltaSync();
+
                         startActivity(new Intent(this, MainActivity.class));
                         finish();
                     }
@@ -100,6 +121,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void login(View view) {
+        showLoading(true);
         AuthorizationServiceConfiguration serviceConfig = new AuthorizationServiceConfiguration(
                 Uri.parse(AUTH_ENDPOINT),
                 Uri.parse(TOKEN_ENDPOINT));
@@ -150,7 +172,8 @@ public class LoginActivity extends AppCompatActivity {
     private void init() {
         loginBtn = findViewById(R.id.btn_sign_in);
         googleLoginBtn = findViewById(R.id.btn_google_sign_in);
-
+        buttonsContainer = findViewById(R.id.login_buttons_container);
+        progressBar = findViewById(R.id.login_progress);
 
         //Allows opening a connection to http:// addresses
         ConnectionBuilder connectionBuilder = uri -> {
@@ -168,4 +191,15 @@ public class LoginActivity extends AppCompatActivity {
         authStateManager = new AuthStateManager(this);
     }
 
+
+    // 2. Add Helper Method
+    private void showLoading(boolean isLoading) {
+        if (isLoading) {
+            buttonsContainer.setVisibility(View.GONE);
+            progressBar.setVisibility(View.VISIBLE);
+        } else {
+            buttonsContainer.setVisibility(View.VISIBLE);
+            progressBar.setVisibility(View.GONE);
+        }
+    }
 }

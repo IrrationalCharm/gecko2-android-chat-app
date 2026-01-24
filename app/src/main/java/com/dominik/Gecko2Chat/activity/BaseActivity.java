@@ -50,9 +50,6 @@ public abstract class BaseActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         checkAuthAndConnect();
-
-        MessageRepository.getInstance(this).performDeltaSync();
-        MainRepository.getInstance(this).refreshStartupData();
     }
 
 

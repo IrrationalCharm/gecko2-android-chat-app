@@ -32,10 +32,19 @@
             android:textSize="40sp"
             android:textStyle="bold" />
 
+        <ProgressBar
+            android:id="@+id/login_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:indeterminateTint="@color/white"
+            android:visibility="gone"
+            tools:visibility="visible" />
 
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/login_buttons_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -48,12 +57,10 @@
             android:layout_width="match_parent"
             android:layout_height="60dp"
             android:layout_marginBottom="16dp"
-
             android:textColor="#1F1F1F"
             android:text="@string/sign_in"
             app:strokeColor="#1B5E20"
             app:strokeWidth="1dp"
-
             app:backgroundTint="@color/white"
             app:cornerRadius="30dp"
             android:textSize="18sp"
@@ -64,22 +71,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="50dp"
-
             android:text="@string/sign_in_with_google"
             android:textAllCaps="false"
-
             android:textColor="#1F1F1F"
             app:strokeColor="#747775"
             app:backgroundTint="@color/white"
-
             app:cornerRadius="25dp"
             app:strokeWidth="1dp"
-
             app:icon="@drawable/ic_google_logo"
             app:iconTint="@null"
             app:iconGravity="textStart"
             app:iconPadding="12dp"
-
             android:fontFamily="sans-serif-medium"
             android:textSize="14sp" />
     </LinearLayout>
