@@ -43,6 +43,8 @@ dependencies {
     // RxJava required by the above library
     implementation("io.reactivex.rxjava2:rxjava:2.2.5")
     implementation("io.reactivex.rxjava2:rxandroid:2.1.0")
+    implementation(libs.activity)
+    implementation(libs.constraintlayout)
 
     val room_version = "2.8.4"
     implementation("androidx.room:room-runtime:$room_version")

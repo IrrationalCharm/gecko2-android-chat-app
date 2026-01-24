@@ -1,11 +1,12 @@
 package com.dominik.Gecko2Chat.activity.main_activity.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -14,6 +15,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.dominik.Gecko2Chat.R;
+import com.dominik.Gecko2Chat.activity.AddFriendActivity;
+import com.dominik.Gecko2Chat.activity.FriendRequestActivity;
 import com.dominik.Gecko2Chat.activity.main_activity.adapter.ContactAdapter;
 import com.dominik.Gecko2Chat.model.ContactModel;
 import com.dominik.Gecko2Chat.viewmodel.MainViewModel;
@@ -27,6 +30,8 @@ public class ContactsFragment extends Fragment {
     private RecyclerView recyclerView;
     private ContactAdapter adapter;
     private List<ContactModel> contactList;
+    private CardView btnAddContact;
+    private CardView btnFriendRequests;
 
     private MainViewModel viewModel;
 
@@ -39,7 +44,20 @@ public class ContactsFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_contacts, container, false);
 
+        btnFriendRequests = view.findViewById(R.id.cvFriendRequests);
+        btnAddContact = view.findViewById(R.id.btnAddContact);
         recyclerView = view.findViewById(R.id.rvContactList);
+
+        btnAddContact.setOnClickListener(v -> {
+            Intent intent = new Intent(getContext(), AddFriendActivity.class);
+            startActivity(intent);
+        });
+
+        btnFriendRequests.setOnClickListener(v -> {
+            Intent intent = new Intent(getContext(), FriendRequestActivity.class);
+            startActivity(intent);
+        });
+
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         contactList = new ArrayList<>();

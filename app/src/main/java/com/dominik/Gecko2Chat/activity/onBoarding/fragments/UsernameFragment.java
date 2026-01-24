@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,8 +25,6 @@ import com.dominik.Gecko2Chat.model.api.RegistrationApi;
 import com.dominik.Gecko2Chat.rest.RestClient;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
-
-import java.util.logging.ErrorManager;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -128,6 +127,7 @@ public class UsernameFragment extends Fragment implements OnboardingStep {
                     return;
                 }
 
+                Log.e("UsernameFragment", "API response body is null");
                 Toast.makeText(getContext(), "Something went wrong", Toast.LENGTH_LONG).show();
             }
 

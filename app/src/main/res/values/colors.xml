@@ -40,6 +40,8 @@
 
     <color name="green_accent">#80DF98</color>
 
+    <color name="soft_red">#E57373</color>
+
     <color name="green_faded">#3E5245</color>
 
     <color name="text_primary">#EEEEEE</color> <color name="text_secondary">#B0B0B0</color>

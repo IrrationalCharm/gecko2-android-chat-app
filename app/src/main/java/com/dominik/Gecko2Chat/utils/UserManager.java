@@ -124,6 +124,26 @@ public class UserManager {
         return user;
     }
 
+    //Which keys to listen to for changes
+    public boolean isUserKey(String key) {
+        if (key == null) return false;
+        return key.equals(KEY_DISPLAY_NAME) ||
+                key.equals(KEY_PROFILE_IMAGE_URL) ||
+                key.equals(KEY_PROFILE_BIO) ||
+                key.equals(KEY_USERNAME) ||
+                key.equals(KEY_MOBILE_NUMBER);
+    }
+
+    //add a listener to SharedPreferences
+    public void registerOnSharedPreferenceChangeListener(SharedPreferences.OnSharedPreferenceChangeListener listener) {
+        prefs.registerOnSharedPreferenceChangeListener(listener);
+    }
+
+    //remove a listener from SharedPreferences
+    public void unregisterOnSharedPreferenceChangeListener(SharedPreferences.OnSharedPreferenceChangeListener listener) {
+        prefs.unregisterOnSharedPreferenceChangeListener(listener);
+    }
+
     public void clearUser() {
         prefs.edit().clear().apply();
         cachedUser = null;

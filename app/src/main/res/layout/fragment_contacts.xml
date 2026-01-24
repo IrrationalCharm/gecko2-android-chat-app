@@ -11,7 +11,7 @@
         android:id="@+id/tvHeader"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Contacts"
+        android:text="@string/contacts"
         android:textSize="24sp"
         android:textStyle="bold"
         android:textColor="@color/text_primary"
@@ -20,6 +20,27 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <androidx.cardview.widget.CardView
+        android:id="@+id/btnAddContact"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="24dp"
+        app:cardCornerRadius="20dp"
+        app:cardBackgroundColor="@color/surface_dark"
+        app:cardElevation="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tvHeader"
+        app:layout_constraintBottom_toBottomOf="@id/tvHeader">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/header"
+            android:src="@drawable/ic_add"
+            android:padding="8dp"
+            app:tint="@color/text_primary" />
+    </androidx.cardview.widget.CardView>
+
     <EditText
         android:id="@+id/etSearch"
         android:layout_width="0dp"
@@ -27,7 +48,7 @@
         android:layout_marginTop="16dp"
         android:layout_marginHorizontal="24dp"
         android:background="@drawable/bg_rounded_pill"
-        android:hint="Search"
+        android:hint="@string/search"
         android:gravity="center"
         android:textSize="14sp"
         android:textColorHint="@color/text_secondary"
@@ -37,6 +58,59 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cvFriendRequests"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="16dp"
+        app:cardBackgroundColor="@color/surface_dark"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        android:visibility="visible"
+        tools:visibility="visible"
+        app:layout_constraintTop_toBottomOf="@id/etSearch"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/person_icon"
+                app:tint="@color/green_accent" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="16dp"
+                android:text="Friend Requests"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvRequestCount"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:background="@drawable/circle_white_bg"
+                android:backgroundTint="@color/soft_red"
+                android:text="3"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvContactList"
         android:layout_width="match_parent"
@@ -45,7 +119,7 @@
         android:paddingBottom="100dp"
         android:clipToPadding="false"
         tools:listitem="@layout/item_contact"
-        app:layout_constraintTop_toBottomOf="@id/etSearch"
+        app:layout_constraintTop_toBottomOf="@id/cvFriendRequests"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

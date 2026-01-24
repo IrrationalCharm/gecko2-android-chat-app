@@ -2,10 +2,7 @@ package com.dominik.Gecko2Chat.database;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.room.Database;
-import androidx.room.Entity;
-import androidx.room.InvalidationTracker;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
@@ -15,6 +12,8 @@ import androidx.room.TypeConverters;
 public abstract class AppDatabase extends RoomDatabase {
     public abstract MessageDao messageDao();
     public abstract FriendDao friendDao();
+    public abstract FriendRequestDao friendRequestDao();
+
 
     private static volatile AppDatabase INSTANCE;
 

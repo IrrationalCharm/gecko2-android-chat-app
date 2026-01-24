@@ -12,7 +12,6 @@ import android.widget.TextView;
 
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.BaseActivity;
-import com.dominik.Gecko2Chat.activity.main_activity.MainActivity;
 import com.dominik.Gecko2Chat.viewmodel.MainViewModel;
 import com.google.android.material.card.MaterialCardView;
 

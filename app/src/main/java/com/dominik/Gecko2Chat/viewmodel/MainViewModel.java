@@ -1,6 +1,7 @@
 package com.dominik.Gecko2Chat.viewmodel;
 
 import android.app.Application;
+import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -22,13 +23,13 @@ import java.util.List;
 
 public class MainViewModel extends AndroidViewModel {
 
-    //private final MainRepository repository;
     private final MessageRepository messageRepository;
     private final MainRepository mainRepository;
 
     private final UserManager userManager;
 
-    // The Combined result for the UI
+    private final SharedPreferences.OnSharedPreferenceChangeListener userPrefsListener;
+
     private final MutableLiveData<User> currentUser = new MutableLiveData<>();
     private final MediatorLiveData<List<ChatModel>> chatList = new MediatorLiveData<>();
     private final MutableLiveData<List<ContactModel >> contactList = new MutableLiveData<>();
@@ -42,9 +43,17 @@ public class MainViewModel extends AndroidViewModel {
         messageRepository = MessageRepository.getInstance(application);
         userManager = UserManager.getInstance(application);
 
+        // Listen to changes in SharedPreferences related to the User object
+        userPrefsListener = (sharedPreferences, key) -> {
+            //Check if the changed key is relevant to the User object
+            if (userManager.isUserKey(key)) {
+                loadCurrentUser();
+            }
+        };
+        userManager.registerOnSharedPreferenceChangeListener(userPrefsListener);
+
         LiveData<List<FriendEntity>> friendsList = mainRepository.getFriends();
         LiveData<List<MessageEntity>> recentMessageEntities = messageRepository.getRecentChats();
-
 
         //Listens to changes in friends and messages db, and runs updateChatList if any change event is triggered
         chatList.addSource(friendsList, friends -> updateChatList(recentMessageEntities.getValue(), friendsList.getValue()));
@@ -108,4 +117,9 @@ public class MainViewModel extends AndroidViewModel {
     public LiveData<User> getCurrentUser() { return currentUser; }
 
 
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+        userManager.unregisterOnSharedPreferenceChangeListener(userPrefsListener);
+    }
 }
