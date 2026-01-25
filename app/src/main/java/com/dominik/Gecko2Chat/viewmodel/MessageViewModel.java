@@ -8,7 +8,6 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
 
-import com.dominik.Gecko2Chat.database.MessageEntity;
 import com.dominik.Gecko2Chat.model.MessageModel;
 import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.dominik.Gecko2Chat.utils.ConversationUtils;

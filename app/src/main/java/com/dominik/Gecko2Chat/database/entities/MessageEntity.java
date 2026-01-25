@@ -1,4 +1,4 @@
-package com.dominik.Gecko2Chat.database;
+package com.dominik.Gecko2Chat.database.entities;
 
 import androidx.annotation.NonNull;
 import androidx.room.Entity;

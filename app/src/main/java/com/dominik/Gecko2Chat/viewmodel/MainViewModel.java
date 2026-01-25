@@ -9,11 +9,12 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import com.dominik.Gecko2Chat.database.FriendEntity;
-import com.dominik.Gecko2Chat.database.MessageEntity;
+import com.dominik.Gecko2Chat.database.entities.FriendEntity;
+import com.dominik.Gecko2Chat.database.entities.MessageEntity;
 import com.dominik.Gecko2Chat.model.ChatModel;
 import com.dominik.Gecko2Chat.model.ContactModel;
 import com.dominik.Gecko2Chat.model.User;
+import com.dominik.Gecko2Chat.repository.FriendRequestRepository;
 import com.dominik.Gecko2Chat.repository.MainRepository;
 import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.dominik.Gecko2Chat.utils.UserManager;
@@ -23,6 +24,7 @@ import java.util.List;
 
 public class MainViewModel extends AndroidViewModel {
 
+    private final FriendRequestRepository friendRequestRepository;
     private final MessageRepository messageRepository;
     private final MainRepository mainRepository;
 
@@ -33,6 +35,7 @@ public class MainViewModel extends AndroidViewModel {
     private final MutableLiveData<User> currentUser = new MutableLiveData<>();
     private final MediatorLiveData<List<ChatModel>> chatList = new MediatorLiveData<>();
     private final MutableLiveData<List<ContactModel >> contactList = new MutableLiveData<>();
+    private final MutableLiveData<Integer> friendRequestsCount = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
 
 
@@ -41,7 +44,11 @@ public class MainViewModel extends AndroidViewModel {
         // Initialize Repository with Application Context
         mainRepository = MainRepository.getInstance(application);
         messageRepository = MessageRepository.getInstance(application);
+        friendRequestRepository = FriendRequestRepository.getInstance(application);
         userManager = UserManager.getInstance(application);
+
+        friendRequestRepository.getFriendRequestsCount().observeForever(friendRequestsCount::setValue);
+
 
         // Listen to changes in SharedPreferences related to the User object
         userPrefsListener = (sharedPreferences, key) -> {
@@ -61,6 +68,7 @@ public class MainViewModel extends AndroidViewModel {
 
         loadCurrentUser();
     }
+
 
     private void loadCurrentUser() {
         User user = userManager.getUser();
@@ -112,6 +120,7 @@ public class MainViewModel extends AndroidViewModel {
         mainRepository.refreshStartupData();
     }
     public LiveData<List<ChatModel>> getChatList() { return chatList; }
+    public LiveData<Integer> getFriendRequestsCount() {return friendRequestsCount; }
     public LiveData<List<ContactModel>> getContactList() { return contactList; }
     public LiveData<Boolean> getIsLoading() { return isLoading; }
     public LiveData<User> getCurrentUser() { return currentUser; }

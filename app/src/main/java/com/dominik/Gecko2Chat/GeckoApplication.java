@@ -7,9 +7,11 @@ import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ProcessLifecycleOwner;
 
+import com.dominik.Gecko2Chat.repository.FriendRequestRepository;
 import com.dominik.Gecko2Chat.repository.MainRepository;
 import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.dominik.Gecko2Chat.utils.AuthStateManager;
+import com.dominik.Gecko2Chat.utils.WebSocketEventRouter;
 
 public class GeckoApplication extends Application implements DefaultLifecycleObserver {
 
@@ -27,8 +29,12 @@ public class GeckoApplication extends Application implements DefaultLifecycleObs
         AuthStateManager authStateManager = new AuthStateManager(this);
 
         if(authStateManager.getAuthState().isAuthorized()) {
+
+            FriendRequestRepository.getInstance(this).syncFriendRequests();
             MessageRepository.getInstance(this).performDeltaSync();
             MainRepository.getInstance(this).refreshStartupData();
+
+            WebSocketEventRouter.getInstance(this);
         }
     }
 

@@ -17,6 +17,9 @@ import ua.naiksoftware.stomp.Stomp;
 import ua.naiksoftware.stomp.StompClient;
 import ua.naiksoftware.stomp.dto.StompHeader;
 
+/**
+ * Keeps the connection alive and provides a raw stream of data.
+ */
 public class WebSocketManager {
     private static WebSocketManager instance;
     private StompClient stompClient;

@@ -1,10 +1,12 @@
-package com.dominik.Gecko2Chat.database;
+package com.dominik.Gecko2Chat.database.dao;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+
+import com.dominik.Gecko2Chat.database.entities.MessageEntity;
 
 import java.time.Instant;
 import java.util.List;

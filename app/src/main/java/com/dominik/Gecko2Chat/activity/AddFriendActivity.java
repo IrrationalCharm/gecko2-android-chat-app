@@ -92,8 +92,6 @@ public class AddFriendActivity extends BaseActivity {
                 return;
             }
 
-
-
             // SUCCESS CASE: Simulation
             isSent = true;
             etUsername.setText("");

@@ -7,8 +7,8 @@ import androidx.lifecycle.LiveData;
 
 import com.dominik.Gecko2Chat.database.AppDatabase;
 import com.dominik.Gecko2Chat.database.DateConverter;
-import com.dominik.Gecko2Chat.database.MessageDao;
-import com.dominik.Gecko2Chat.database.MessageEntity;
+import com.dominik.Gecko2Chat.database.dao.MessageDao;
+import com.dominik.Gecko2Chat.database.entities.MessageEntity;
 import com.dominik.Gecko2Chat.enums.PrivateMessageType;
 import com.dominik.Gecko2Chat.enums.TextType;
 import com.dominik.Gecko2Chat.model.api.ApiResponse;
@@ -32,10 +32,8 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-import io.reactivex.android.schedulers.AndroidSchedulers;
+
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -56,7 +54,6 @@ public class MessageRepository {
     private MessageRepository(Context context) {
         messageDao = AppDatabase.getInstance(context).messageDao();
         messageApi = RestClient.getInstance(context).getMessagesApi();
-        subscribeToWebsocket();
     }
 
     public static synchronized MessageRepository getInstance(Context context) {
@@ -67,47 +64,30 @@ public class MessageRepository {
     }
 
 
-    private void subscribeToWebsocket() {
-        Disposable d = WebSocketManager.getInstance().getMessageStream()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::handleIncomingMessage, Throwable::printStackTrace);
+    public void incomingMessage(ChatMessageDto dto) {
+        Log.i("MessageRepository", "Message received: " + dto.content());
+        var mEntity = new MessageEntity();
+        mEntity.messageId = dto.clientMsgId();
+        mEntity.conversationId = ConversationUtils.getConversationId(dto.senderId(), dto.recipientId());
+        mEntity.senderId = dto.senderId();
+        mEntity.recipientId = dto.recipientId();
+        mEntity.content = dto.content();
+        mEntity.timestamp = Instant.parse(dto.timestamp());
+        mEntity.textType = dto.textType().toString();
 
-        compositeDisposable.add(d);
+        executor.execute(() -> messageDao.insertMessage(mEntity));
+
+        // Emit notification if its not the current conversation
+        if (currentConversationId != null && !currentConversationId.equals(mEntity.conversationId)) {
+            Log.i("MessageRepository", "Message from another conversation received");
+            //TODO emit notification
+            //NotificationUtils.showNewMessageNotification(context, mEntity);
+        }
     }
 
 
-    private void handleIncomingMessage(String json) {
-        try {
-            PrivateMessage dto = gson.fromJson(json, PrivateMessage.class);
-
-            switch(dto) {
-                case MessageReceivedDto messageReceivedDto -> Log.i("MessageRepository", "Message acknowledged by server received: " + messageReceivedDto.uuid());
-
-                case ChatMessageDto messageDto -> {
-                    Log.i("MessageRepository", "Message received: " + messageDto.content());
-                    var mEntity = new MessageEntity();
-                    mEntity.messageId = messageDto.clientMsgId();
-                    mEntity.conversationId = ConversationUtils.getConversationId(messageDto.senderId(), messageDto.recipientId());
-                    mEntity.senderId = messageDto.senderId();
-                    mEntity.recipientId = messageDto.recipientId();
-                    mEntity.content = messageDto.content();
-                    mEntity.timestamp = Instant.parse(messageDto.timestamp());
-                    mEntity.textType = messageDto.textType().toString();
-
-                    executor.execute(() -> messageDao.insertMessage(mEntity));
-
-                    // Emit notification if its not the current conversation
-                    if (currentConversationId != null && !currentConversationId.equals(mEntity.conversationId)) {
-                        Log.i("MessageRepository", "Message from another conversation received");
-                        //TODO emit notification
-                        //NotificationUtils.showNewMessageNotification(context, mEntity);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            Log.e("Chat", "Error parsing message", e);
-        }
+    public void messageReceived(MessageReceivedDto dto) {
+        Log.i("MessageRepository", "Message acknowledged by server received: " + dto.uuid());
     }
 
 
@@ -151,11 +131,11 @@ public class MessageRepository {
 
     public void sendMessage(String myId, String currentFriendId, String content) {
         var dto = new ChatMessageDto(
+                PrivateMessageType.CHAT_MESSAGE,
                 UUID.randomUUID().toString(),
                 myId,
                 currentFriendId,
                 TextType.TEXT,
-                PrivateMessageType.CHAT_MESSAGE,
                 content,
                 Instant.now().toString()
         );

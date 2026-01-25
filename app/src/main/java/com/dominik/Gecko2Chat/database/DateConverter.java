@@ -4,6 +4,10 @@ import androidx.room.TypeConverter;
 
 import java.time.Instant;
 
+
+/**
+ * Used for converting Instant to timestamp and vice versa
+ */
 public class DateConverter {
 
     @TypeConverter

@@ -2,6 +2,7 @@ package com.dominik.Gecko2Chat.rest;
 
 import android.content.Context;
 
+import com.dominik.Gecko2Chat.model.api.FriendshipApi;
 import com.dominik.Gecko2Chat.model.api.KeycloakApi;
 import com.dominik.Gecko2Chat.model.api.MessageApi;
 import com.dominik.Gecko2Chat.model.api.RegistrationApi;
@@ -58,6 +59,9 @@ public class RestClient {
     public UserApi getUserApi() {return retrofit.create(UserApi.class);}
 
     public MessageApi getMessagesApi() { return retrofit.create(MessageApi.class);}
+
+    public FriendshipApi getFriendshipApi() { return retrofit.create(FriendshipApi.class);}
+
 
     public KeycloakApi getKeycloakApi() { return retrofit.create(KeycloakApi.class);}
 }

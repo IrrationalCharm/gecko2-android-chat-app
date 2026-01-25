@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
@@ -32,6 +33,7 @@ public class ContactsFragment extends Fragment {
     private List<ContactModel> contactList;
     private CardView btnAddContact;
     private CardView btnFriendRequests;
+    private TextView tvRequestCount;
 
     private MainViewModel viewModel;
 
@@ -47,6 +49,8 @@ public class ContactsFragment extends Fragment {
         btnFriendRequests = view.findViewById(R.id.cvFriendRequests);
         btnAddContact = view.findViewById(R.id.btnAddContact);
         recyclerView = view.findViewById(R.id.rvContactList);
+        tvRequestCount = view.findViewById(R.id.tvRequestCount);
+
 
         btnAddContact.setOnClickListener(v -> {
             Intent intent = new Intent(getContext(), AddFriendActivity.class);
@@ -72,6 +76,15 @@ public class ContactsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+
+        viewModel.getFriendRequestsCount().observe(getViewLifecycleOwner(), count -> {
+            if (count > 0) {
+                btnFriendRequests.setVisibility(View.VISIBLE);
+                tvRequestCount.setText(String.valueOf(count));
+            } else {
+                btnFriendRequests.setVisibility(View.GONE);
+            }
+        });
 
         viewModel.getContactList().observe(getViewLifecycleOwner(), contacts -> {
             contactList.clear();

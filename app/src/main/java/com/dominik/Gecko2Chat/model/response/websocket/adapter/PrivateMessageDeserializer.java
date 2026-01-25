@@ -2,6 +2,7 @@ package com.dominik.Gecko2Chat.model.response.websocket.adapter;
 
 import com.dominik.Gecko2Chat.enums.PrivateMessageType;
 import com.dominik.Gecko2Chat.model.response.websocket.ChatMessageDto;
+import com.dominik.Gecko2Chat.model.response.websocket.FriendRequestReceivedDto;
 import com.dominik.Gecko2Chat.model.response.websocket.MessageReceivedDto;
 import com.dominik.Gecko2Chat.model.response.websocket.PrivateMessage;
 import com.google.gson.JsonDeserializationContext;
@@ -26,8 +27,8 @@ public class PrivateMessageDeserializer implements JsonDeserializer<PrivateMessa
         return switch (type) {
             case CHAT_MESSAGE -> context.deserialize(json, ChatMessageDto.class);
             case MESSAGE_RECEIVED -> context.deserialize(json, MessageReceivedDto.class);
+            case FRIEND_REQUEST_RECEIVED -> context.deserialize(json, FriendRequestReceivedDto.class);
 
-            default -> throw new IllegalArgumentException("Unknown type: " + type);
         };
 
     }

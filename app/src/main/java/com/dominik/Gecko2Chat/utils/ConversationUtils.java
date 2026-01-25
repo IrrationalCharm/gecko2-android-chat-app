@@ -1,6 +1,6 @@
 package com.dominik.Gecko2Chat.utils;
 
-import com.dominik.Gecko2Chat.database.MessageEntity;
+import com.dominik.Gecko2Chat.database.entities.MessageEntity;
 import com.dominik.Gecko2Chat.enums.TextType;
 import com.dominik.Gecko2Chat.model.MessageModel;
 import com.dominik.Gecko2Chat.model.response.MessageDto;

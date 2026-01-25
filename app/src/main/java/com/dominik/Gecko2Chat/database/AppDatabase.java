@@ -7,7 +7,14 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
 
-@Database(entities = {MessageEntity.class, FriendEntity.class}, version = 1)
+import com.dominik.Gecko2Chat.database.dao.FriendDao;
+import com.dominik.Gecko2Chat.database.dao.FriendRequestDao;
+import com.dominik.Gecko2Chat.database.dao.MessageDao;
+import com.dominik.Gecko2Chat.database.entities.FriendEntity;
+import com.dominik.Gecko2Chat.database.entities.FriendRequestEntity;
+import com.dominik.Gecko2Chat.database.entities.MessageEntity;
+
+@Database(entities = {MessageEntity.class, FriendEntity.class, FriendRequestEntity.class}, version = 3)
 @TypeConverters({DateConverter.class})
 public abstract class AppDatabase extends RoomDatabase {
     public abstract MessageDao messageDao();

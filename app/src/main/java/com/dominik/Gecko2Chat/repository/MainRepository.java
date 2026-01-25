@@ -4,24 +4,19 @@ import android.content.Context;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
 
 import com.dominik.Gecko2Chat.database.AppDatabase;
-import com.dominik.Gecko2Chat.database.FriendDao;
-import com.dominik.Gecko2Chat.database.FriendEntity;
-import com.dominik.Gecko2Chat.database.MessageDao;
-import com.dominik.Gecko2Chat.database.MessageEntity;
+import com.dominik.Gecko2Chat.database.dao.FriendDao;
+import com.dominik.Gecko2Chat.database.entities.FriendEntity;
+import com.dominik.Gecko2Chat.database.dao.MessageDao;
 import com.dominik.Gecko2Chat.model.User;
 import com.dominik.Gecko2Chat.model.api.ApiResponse;
 import com.dominik.Gecko2Chat.model.api.UserApi;
-import com.dominik.Gecko2Chat.model.response.ConversationSummaryDto;
 import com.dominik.Gecko2Chat.model.response.StartupDto;
 import com.dominik.Gecko2Chat.rest.RestClient;
-import com.dominik.Gecko2Chat.utils.ConversationUtils;
 import com.dominik.Gecko2Chat.utils.UserManager;
 import com.dominik.Gecko2Chat.utils.mapper.UserMapper;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
