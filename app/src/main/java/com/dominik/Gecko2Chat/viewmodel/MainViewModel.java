@@ -35,7 +35,7 @@ public class MainViewModel extends AndroidViewModel {
     private final MutableLiveData<User> currentUser = new MutableLiveData<>();
     private final MediatorLiveData<List<ChatModel>> chatList = new MediatorLiveData<>();
     private final MutableLiveData<List<ContactModel >> contactList = new MutableLiveData<>();
-    private final MutableLiveData<Integer> friendRequestsCount = new MutableLiveData<>();
+    private final LiveData<Integer> friendRequestsCount;
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
 
 
@@ -47,7 +47,7 @@ public class MainViewModel extends AndroidViewModel {
         friendRequestRepository = FriendRequestRepository.getInstance(application);
         userManager = UserManager.getInstance(application);
 
-        friendRequestRepository.getFriendRequestsCount().observeForever(friendRequestsCount::setValue);
+        friendRequestsCount = friendRequestRepository.getFriendRequestsCount();
 
 
         // Listen to changes in SharedPreferences related to the User object

@@ -30,7 +30,7 @@ public class FriendRequestRepository {
     private final FriendRequestDao friendRequestDao;
     private final FriendshipApi friendshipApi;
     private static FriendRequestRepository instance;
-    private UserManager userManager;
+    private final UserManager userManager;
 
     private FriendRequestRepository(Context context) {
         userManager = UserManager.getInstance(context);
@@ -102,5 +102,9 @@ public class FriendRequestRepository {
 
         executor.execute(() -> friendRequestDao.insertFriendRequest(friendRequest));
 
+    }
+
+    public LiveData<List<FriendRequestEntity>> getFriendRequests() {
+        return friendRequestDao.getFriendRequests();
     }
 }
