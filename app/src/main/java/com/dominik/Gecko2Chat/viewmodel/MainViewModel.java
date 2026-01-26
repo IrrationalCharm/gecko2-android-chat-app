@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Transformations;
 
 import com.dominik.Gecko2Chat.database.entities.FriendEntity;
 import com.dominik.Gecko2Chat.database.entities.MessageEntity;
@@ -34,7 +35,7 @@ public class MainViewModel extends AndroidViewModel {
 
     private final MutableLiveData<User> currentUser = new MutableLiveData<>();
     private final MediatorLiveData<List<ChatModel>> chatList = new MediatorLiveData<>();
-    private final MutableLiveData<List<ContactModel >> contactList = new MutableLiveData<>();
+    private LiveData<List<ContactModel >> contactList = new MutableLiveData<>();
     private final LiveData<Integer> friendRequestsCount;
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
 
@@ -65,6 +66,10 @@ public class MainViewModel extends AndroidViewModel {
         //Listens to changes in friends and messages db, and runs updateChatList if any change event is triggered
         chatList.addSource(friendsList, friends -> updateChatList(recentMessageEntities.getValue(), friendsList.getValue()));
         chatList.addSource(recentMessageEntities, chats -> updateChatList(recentMessageEntities.getValue(), friendsList.getValue()));
+
+        contactList = Transformations.map(friendsList, entities -> entities.stream()
+                .map(entity -> new ContactModel(entity.internalId, entity.username, entity.displayName, "Recently online", entity.profileImageUrl))
+                        .toList());
 
         loadCurrentUser();
     }

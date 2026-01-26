@@ -30,7 +30,6 @@ public class AddFriendActivity extends BaseActivity {
     private ValueAnimator borderAnimator;
 
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,7 +39,6 @@ public class AddFriendActivity extends BaseActivity {
 
         initViews();
         initListeners();
-
 
         setInputBorderColor(ContextCompat.getColor(this, R.color.text_secondary));
     }
@@ -94,11 +92,13 @@ public class AddFriendActivity extends BaseActivity {
         });
     }
 
+
     private void errorSendingRequest(String message) {
         isSent = false;
         etUsername.setError(message);
         setInputBorderColor(ContextCompat.getColor(this, R.color.soft_red));
     }
+
 
     private void friendRequestSent() {
         isSent = true;
@@ -109,6 +109,7 @@ public class AddFriendActivity extends BaseActivity {
 
         Toast.makeText(this, "Friend Request Sent", Toast.LENGTH_SHORT).show();
     }
+
 
     private void animateSuccessBorder() {
         int defaultColor = ContextCompat.getColor(this, R.color.text_secondary);
@@ -157,6 +158,7 @@ public class AddFriendActivity extends BaseActivity {
 
         borderAnimator.start();
     }
+
 
     private void setInputBorderColor(int color) {
         GradientDrawable background = (GradientDrawable) etUsername.getBackground();

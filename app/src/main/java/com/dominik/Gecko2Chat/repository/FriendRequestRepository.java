@@ -38,7 +38,7 @@ public class FriendRequestRepository {
     private final UserManager userManager;
 
     public interface RepositoryCallback<T> {
-        void onSuccess(T data);
+        void onSuccess();
         void onError(ErrorCode message);
     }
 
@@ -165,7 +165,7 @@ public class FriendRequestRepository {
             public void onResponse(@NonNull Call<ApiResponse<Void>> call, @NonNull Response<ApiResponse<Void>> response) {
                 if(response.isSuccessful()) {
                     Log.i("FriendRequestRepository", "Friend request sent");
-                    callback.onSuccess(null);
+                    callback.onSuccess();
                 } else {
                     Log.e("FriendRequestRepository", "Failed to send friend request: " + response.message());
                     callback.onError(ErrorUtils.parseError(response)); //Extracts from the returning error body the error code and parses it to ErrorCode

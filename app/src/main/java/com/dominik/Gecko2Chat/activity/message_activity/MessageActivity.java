@@ -52,10 +52,12 @@ public class MessageActivity extends BaseActivity {
             int oldSize = adapter.getItemCount();
             adapter.setMessages(messages);
 
-            if (oldSize == 0) {
-                rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
-            } else if (messages.size() > oldSize && !isUserAtBottom()) {
-                rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
+            if (adapter.getItemCount() > 0) {
+                if (oldSize == 0) {
+                    rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
+                } else if (messages.size() > oldSize && !isUserAtBottom()) {
+                    rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
+                }
             }
         });
 

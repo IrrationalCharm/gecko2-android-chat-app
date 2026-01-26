@@ -7,6 +7,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.dominik.Gecko2Chat.R;
@@ -17,9 +18,16 @@ import java.util.List;
 public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactViewHolder>{
 
     private List<ContactModel> contactList;
+    private OnItemClickListener listener;
 
-    public ContactAdapter(List<ContactModel> contactList) {
+    public interface OnItemClickListener {
+        void onItemClick(ContactModel contact);
+    }
+
+
+    public ContactAdapter(List<ContactModel> contactList, OnItemClickListener listener) {
         this.contactList = contactList;
+        this.listener = listener;
     }
 
     @NonNull
@@ -36,6 +44,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
         ContactModel contact = contactList.get(position);
         holder.tvName.setText(contact.displayName());
         holder.tvLastSeen.setText(contact.lastSeen());
+        holder.clItemContact.setOnClickListener(v -> listener.onItemClick(contact));
     }
 
     @Override
@@ -46,11 +55,14 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
     public static class ContactViewHolder extends RecyclerView.ViewHolder {
         private TextView tvName, tvLastSeen;
         private ImageView ivAvatar;
+        private ConstraintLayout clItemContact;
+
 
         public ContactViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tvName);
             tvLastSeen = itemView.findViewById(R.id.tvLastSeen);
+            clItemContact = itemView.findViewById(R.id.clItemContact);
             ivAvatar = itemView.findViewById(R.id.ivAvatar);
         }
     }

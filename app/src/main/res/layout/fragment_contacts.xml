@@ -67,8 +67,8 @@
         app:cardBackgroundColor="@color/surface_dark"
         app:cardCornerRadius="12dp"
         app:cardElevation="0dp"
-        android:visibility="visible"
-        tools:visibility="visible"
+        android:visibility="gone"
+        tools:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/etSearch"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">

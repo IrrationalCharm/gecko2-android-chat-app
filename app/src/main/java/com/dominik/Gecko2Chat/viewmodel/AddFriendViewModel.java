@@ -5,7 +5,6 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.MutableLiveData;
-
 import com.dominik.Gecko2Chat.activity.add_friend_activity.UiState;
 import com.dominik.Gecko2Chat.enums.ErrorCode;
 import com.dominik.Gecko2Chat.repository.FriendRequestRepository;
@@ -32,7 +31,7 @@ public class AddFriendViewModel extends AndroidViewModel {
 
         repository.sendFriendRequest(rawInput, new FriendRequestRepository.RepositoryCallback<>() {
             @Override
-            public void onSuccess(Void data) {
+            public void onSuccess() {
                 uiState.setValue(new UiState.Success());
             }
 
@@ -52,7 +51,7 @@ public class AddFriendViewModel extends AndroidViewModel {
 
     }
 
-    private void validateInput(String rawInput) {
+    private void validateInput(@NonNull String rawInput) {
         if (rawInput.isEmpty()) return;
 
         if (rawInput.length() < 3) {

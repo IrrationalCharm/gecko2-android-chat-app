@@ -19,6 +19,7 @@ import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.add_friend_activity.AddFriendActivity;
 import com.dominik.Gecko2Chat.activity.FriendRequestActivity;
 import com.dominik.Gecko2Chat.activity.main_activity.adapter.ContactAdapter;
+import com.dominik.Gecko2Chat.activity.message_activity.MessageActivity;
 import com.dominik.Gecko2Chat.model.ContactModel;
 import com.dominik.Gecko2Chat.viewmodel.MainViewModel;
 
@@ -65,7 +66,13 @@ public class ContactsFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         contactList = new ArrayList<>();
-        adapter = new ContactAdapter(contactList);
+        adapter = new ContactAdapter(contactList, contact -> {
+            Intent intent = new Intent(getContext(), MessageActivity.class);
+            intent.putExtra("FRIEND_ID", contact.internalId());
+            intent.putExtra("FRIEND_NAME", contact.displayName());
+            startActivity(intent);
+        });
+
         recyclerView.setAdapter(adapter);
 
         return view;
