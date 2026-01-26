@@ -16,7 +16,6 @@ import androidx.lifecycle.ViewModelProvider;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.BaseActivity;
 import com.dominik.Gecko2Chat.viewmodel.AddFriendViewModel;
-import com.dominik.Gecko2Chat.viewmodel.MainViewModel;
 import com.google.android.material.button.MaterialButton;
 
 public class AddFriendActivity extends BaseActivity {
@@ -55,9 +54,9 @@ public class AddFriendActivity extends BaseActivity {
     private void initListeners() {
         viewModel.getUiState().observe(this, uiState -> {
             switch (uiState) {
-                case UiState.Idle i -> {}
-                case UiState.Loading l -> {} //TODO add loading animation
-                case UiState.Success s -> friendRequestSent();
+                case UiState.Idle ignored -> {}
+                case UiState.Loading ignored -> {} //TODO add loading animation
+                case UiState.Success ignored -> friendRequestSent();
                 case UiState.Error e -> errorSendingRequest(e.message);
 
                 default -> throw new IllegalStateException("Unexpected value: " + uiState);
@@ -84,6 +83,7 @@ public class AddFriendActivity extends BaseActivity {
                     isSent = false;
                     return;
                 }
+                viewModel.getUiState().setValue(new UiState.Idle());
                 setInputBorderColor(ContextCompat.getColor(AddFriendActivity.this, R.color.text_secondary));
             }
         });
