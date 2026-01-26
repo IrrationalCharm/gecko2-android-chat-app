@@ -8,8 +8,11 @@ import androidx.lifecycle.LiveData;
 import com.dominik.Gecko2Chat.database.AppDatabase;
 import com.dominik.Gecko2Chat.database.dao.FriendRequestDao;
 import com.dominik.Gecko2Chat.database.entities.FriendRequestEntity;
+import com.dominik.Gecko2Chat.enums.ErrorCode;
+import com.dominik.Gecko2Chat.enums.FriendRequestAction;
 import com.dominik.Gecko2Chat.model.api.ApiResponse;
 import com.dominik.Gecko2Chat.model.api.FriendshipApi;
+import com.dominik.Gecko2Chat.model.request.UpdateFriendRequestDto;
 import com.dominik.Gecko2Chat.model.response.websocket.FriendRequestDto;
 import com.dominik.Gecko2Chat.model.response.websocket.FriendRequestReceivedDto;
 import com.dominik.Gecko2Chat.rest.RestClient;
@@ -31,6 +34,11 @@ public class FriendRequestRepository {
     private final FriendshipApi friendshipApi;
     private static FriendRequestRepository instance;
     private final UserManager userManager;
+
+    public interface RepositoryCallback<T> {
+        void onSuccess(T data);
+        void onError(ErrorCode message);
+    }
 
     private FriendRequestRepository(Context context) {
         userManager = UserManager.getInstance(context);
@@ -81,9 +89,11 @@ public class FriendRequestRepository {
         });
     }
 
+
     public LiveData<Integer> getFriendRequestsCount() {
         return friendRequestDao.getFriendRequestsCount();
     }
+
 
     public void incomingFriendRequest(FriendRequestReceivedDto dto) {
         Log.i("FriendRequestRepository", "Friend request received: " + dto);
@@ -104,7 +114,77 @@ public class FriendRequestRepository {
 
     }
 
+
     public LiveData<List<FriendRequestEntity>> getFriendRequests() {
         return friendRequestDao.getFriendRequests();
+    }
+
+
+    public void acceptRequest(String requestId) {
+        var dto = new UpdateFriendRequestDto(FriendRequestAction.ACCEPT_REQUEST);
+
+        friendshipApi.updateFriendRequest(requestId, dto).enqueue(new Callback<ApiResponse<Void>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Void>> call, Response<ApiResponse<Void>> response) {
+                if(response.isSuccessful()) {
+                    Log.i("FriendRequestRepository", "Friend request accepted");
+                    executor.execute(() -> friendRequestDao.removeRequestById(requestId));
+
+                } else {
+                    Log.e("FriendRequestRepository", "Failed to accept friend request: " + response.message());
+
+                }
+
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Void>> call, Throwable t) {
+                Log.e("FriendRequestRepository", "Failed to accept friend request", t);
+            }
+        });
+    }
+
+
+    public void declineRequest(String requestId) {
+        var dto = new UpdateFriendRequestDto(FriendRequestAction.DECLINE_REQUEST);
+
+        friendshipApi.updateFriendRequest(requestId, dto).enqueue(new Callback<ApiResponse<Void>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Void>> call, Response<ApiResponse<Void>> response) {
+                if(response.isSuccessful()) {
+                    Log.i("FriendRequestRepository", "Friend request denied");
+                    executor.execute(() -> friendRequestDao.removeRequestById(requestId));
+
+                } else {
+                    Log.e("FriendRequestRepository", "Failed to deny friend request: " + response.message());
+                }
+
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Void>> call, Throwable t) {
+                Log.e("FriendRequestRepository", "Failed to deny friend request", t);
+            }
+        });
+    }
+
+    public void sendFriendRequest(String username, RepositoryCallback<Void> callback) {
+        friendshipApi.sendFriendRequest(username).enqueue(new Callback<ApiResponse<Void>>() {
+
+            @Override
+            public void onResponse(Call<ApiResponse<Void>> call, Response<ApiResponse<Void>> response) {
+                if(response.isSuccessful()) {
+                    Log.i("FriendRequestRepository", "Friend request sent");
+                    callback.onSuccess(null);
+                } else {
+                    //callback.onError(response.);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Void>> call, Throwable t) {
+
+            }
+        });
     }
 }

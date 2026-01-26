@@ -16,7 +16,7 @@
         android:theme="@style/Theme.Gecko2chatapp"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".activity.AddFriendActivity"
+            android:name=".activity.add_friend_activity.AddFriendActivity"
             android:exported="false" />
         <activity
             android:name="net.openid.appauth.RedirectUriReceiverActivity"

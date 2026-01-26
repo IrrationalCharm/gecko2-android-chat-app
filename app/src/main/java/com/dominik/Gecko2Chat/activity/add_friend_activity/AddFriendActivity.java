@@ -1,4 +1,4 @@
-package com.dominik.Gecko2Chat.activity;
+package com.dominik.Gecko2Chat.activity.add_friend_activity;
 
 import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
@@ -11,14 +11,18 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.dominik.Gecko2Chat.R;
+import com.dominik.Gecko2Chat.activity.BaseActivity;
+import com.dominik.Gecko2Chat.viewmodel.AddFriendViewModel;
+import com.dominik.Gecko2Chat.viewmodel.MainViewModel;
 import com.google.android.material.button.MaterialButton;
 
 public class AddFriendActivity extends BaseActivity {
 
 
-    private final static String USERNAME_REGEX = "^[a-zA-Z0-9_-]{3,20}$";
+    private AddFriendViewModel viewModel;
     private ImageView btnBack;
     private EditText etUsername;
     private MaterialButton btnSendRequest;
@@ -26,10 +30,14 @@ public class AddFriendActivity extends BaseActivity {
     private boolean isSent = false;
     private ValueAnimator borderAnimator;
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_friend);
+
+        viewModel = new ViewModelProvider(this).get(AddFriendViewModel.class);
 
         initViews();
         initListeners();
@@ -45,6 +53,17 @@ public class AddFriendActivity extends BaseActivity {
     }
 
     private void initListeners() {
+        viewModel.getUiState().observe(this, uiState -> {
+            switch (uiState) {
+                case UiState.Idle i -> {}
+                case UiState.Loading l -> {} //TODO add loading animation
+                case UiState.Success s -> friendRequestSent();
+                case UiState.Error e -> errorSendingRequest(e.message);
+
+                default -> throw new IllegalStateException("Unexpected value: " + uiState);
+            }
+        });
+
         btnBack.setOnClickListener(v -> finish());
 
         etUsername.addTextChangedListener(new TextWatcher() {
@@ -71,36 +90,24 @@ public class AddFriendActivity extends BaseActivity {
 
         btnSendRequest.setOnClickListener(v -> {
             String input = etUsername.getText().toString().trim();
-
-            if (input.isEmpty()) return;
-
-            if (input.length() < 3) {
-                etUsername.setError("Too short (min 3 chars)");
-                setInputBorderColor(ContextCompat.getColor(this, R.color.soft_red));
-                return;
-            }
-
-            if (input.length() > 20) {
-                etUsername.setError("Too long (max 20 chars)");
-                setInputBorderColor(ContextCompat.getColor(this, R.color.soft_red));
-                return;
-            }
-
-            if (!input.matches(USERNAME_REGEX)) {
-                etUsername.setError("Not a valid username");
-                setInputBorderColor(ContextCompat.getColor(this, R.color.soft_red));
-                return;
-            }
-
-            // SUCCESS CASE: Simulation
-            isSent = true;
-            etUsername.setText("");
-            etUsername.setError(null);
-
-            animateSuccessBorder();
-
-            Toast.makeText(this, "Friend Request Sent", Toast.LENGTH_SHORT).show();
+            viewModel.onSendClick(input);
         });
+    }
+
+    private void errorSendingRequest(String message) {
+        isSent = false;
+        etUsername.setError(message);
+        setInputBorderColor(ContextCompat.getColor(this, R.color.soft_red));
+    }
+
+    private void friendRequestSent() {
+        isSent = true;
+        etUsername.setText("");
+        etUsername.setError(null);
+
+        animateSuccessBorder();
+
+        Toast.makeText(this, "Friend Request Sent", Toast.LENGTH_SHORT).show();
     }
 
     private void animateSuccessBorder() {

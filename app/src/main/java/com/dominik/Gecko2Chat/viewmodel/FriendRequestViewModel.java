@@ -33,11 +33,11 @@ public class FriendRequestViewModel extends AndroidViewModel {
     }
 
     public void acceptRequest(String requestId) {
-        //repository.acceptRequest(requestId);
+        repository.acceptRequest(requestId);
     }
 
     public void declineRequest(String requestId) {
-        //repository.declineRequest(requestId);
+        repository.declineRequest(requestId);
     }
 
     public LiveData<List<FriendRequestModel>> getFriendRequests() {

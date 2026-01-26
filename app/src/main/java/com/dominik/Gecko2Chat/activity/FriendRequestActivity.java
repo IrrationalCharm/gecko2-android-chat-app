@@ -32,39 +32,56 @@ public class FriendRequestActivity extends BaseActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_friend_request);
 
-        viewModel = new ViewModelProvider(this).get(FriendRequestViewModel.class);
+        initViews();
+        setupViewModel();
+        setupRecyclerView();
+        observeViewModel();
+    }
 
+    private void initViews() {
         layoutEmptyState = findViewById(R.id.layoutEmptyState);
         rvFriendRequests = findViewById(R.id.rvFriendRequests);
         btnBack = findViewById(R.id.btnBack);
 
         btnBack.setOnClickListener(v -> finish());
+    }
+
+    private void setupViewModel() {
+        viewModel = new ViewModelProvider(this).get(FriendRequestViewModel.class);
+    }
+
+    private void setupRecyclerView() {
         rvFriendRequests.setLayoutManager(new LinearLayoutManager(this));
 
         friendRequestList = new ArrayList<>();
         adapter = new FriendRequestAdapter(friendRequestList, (requestModel, isAccepted) -> {
-            if(isAccepted)
+            if (isAccepted) {
                 viewModel.acceptRequest(requestModel.id());
-            else
+            } else {
                 viewModel.declineRequest(requestModel.id());
+            }
         });
 
+        rvFriendRequests.setAdapter(adapter);
+    }
+
+    private void observeViewModel() {
         viewModel.getFriendRequests().observe(this, requests -> {
-            if (requests.isEmpty()) {
-                rvFriendRequests.setVisibility(View.GONE);
-                layoutEmptyState.setVisibility(View.VISIBLE);
-            } else {
-                rvFriendRequests.setVisibility(View.VISIBLE);
-                layoutEmptyState.setVisibility(View.GONE);
-            }
+            updateEmptyState(requests.isEmpty());
 
             friendRequestList.clear();
             friendRequestList.addAll(requests);
             adapter.notifyDataSetChanged();
         });
+    }
 
-
-        rvFriendRequests.setAdapter(adapter);
-
+    private void updateEmptyState(boolean isEmpty) {
+        if (isEmpty) {
+            rvFriendRequests.setVisibility(View.GONE);
+            layoutEmptyState.setVisibility(View.VISIBLE);
+        } else {
+            rvFriendRequests.setVisibility(View.VISIBLE);
+            layoutEmptyState.setVisibility(View.GONE);
+        }
     }
 }

@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.dominik.Gecko2Chat.R;
-import com.dominik.Gecko2Chat.activity.AddFriendActivity;
+import com.dominik.Gecko2Chat.activity.add_friend_activity.AddFriendActivity;
 import com.dominik.Gecko2Chat.activity.FriendRequestActivity;
 import com.dominik.Gecko2Chat.activity.main_activity.adapter.ContactAdapter;
 import com.dominik.Gecko2Chat.model.ContactModel;

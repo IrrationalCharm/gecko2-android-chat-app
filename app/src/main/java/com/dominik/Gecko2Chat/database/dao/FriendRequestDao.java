@@ -2,6 +2,7 @@ package com.dominik.Gecko2Chat.database.dao;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
@@ -25,4 +26,7 @@ public interface FriendRequestDao {
 
     @Query("SELECT * FROM friend_requests")
     LiveData<List<FriendRequestEntity>> getFriendRequests();
+
+    @Query("DELETE FROM friend_requests WHERE id = :requestId")
+    void removeRequestById(String requestId);
 }
