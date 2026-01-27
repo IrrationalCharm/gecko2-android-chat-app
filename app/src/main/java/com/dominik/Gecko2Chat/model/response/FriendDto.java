@@ -1,9 +1,8 @@
 package com.dominik.Gecko2Chat.model.response;
 
 import java.io.Serializable;
-import java.util.UUID;
 
-public record PublicUserResponseDto(
+public record FriendDto(
         String internalId,
         String username,
         String displayName,

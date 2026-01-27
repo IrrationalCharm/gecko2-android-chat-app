@@ -52,11 +52,17 @@ public class MessageActivity extends BaseActivity {
             int oldSize = adapter.getItemCount();
             adapter.setMessages(messages);
 
+            boolean wasAtBottom = isUserAtBottom();
+
             if (adapter.getItemCount() > 0) {
                 if (oldSize == 0) {
-                    rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
-                } else if (messages.size() > oldSize && !isUserAtBottom()) {
-                    rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
+                    // Initial load -> Scroll to bottom
+                    rvChatMessages.scrollToPosition(adapter.getItemCount() - 1);
+                } else if (messages.size() > oldSize) {
+                    // ONLY scroll to bottom if the user was already there (i.e. new incoming message)
+                    if (wasAtBottom) {
+                        rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
+                    }
                 }
             }
         });

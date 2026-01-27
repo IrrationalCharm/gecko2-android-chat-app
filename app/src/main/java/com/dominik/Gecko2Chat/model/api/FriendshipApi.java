@@ -1,7 +1,7 @@
 package com.dominik.Gecko2Chat.model.api;
 
 import com.dominik.Gecko2Chat.model.request.UpdateFriendRequestDto;
-import com.dominik.Gecko2Chat.model.response.PublicUserResponseDto;
+import com.dominik.Gecko2Chat.model.response.FriendDto;
 import com.dominik.Gecko2Chat.model.response.websocket.FriendRequestDto;
 
 import java.util.List;
@@ -20,7 +20,7 @@ import retrofit2.http.Path;
 public interface FriendshipApi {
 
     @GET("/user-service/api/v1/friends")
-    Call<ApiResponse<Set<PublicUserResponseDto>>> getFriendsList();
+    Call<ApiResponse<Set<FriendDto>>> getFriendsList();
 
     @GET("/user-service/api/v1/friends/requests")
     Call<ApiResponse<List<FriendRequestDto>>> pendingFriendRequests();

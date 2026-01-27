@@ -20,7 +20,6 @@ import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.main_activity.MainActivity;
 import com.dominik.Gecko2Chat.activity.onBoarding.OnboardingActivity;
 import com.dominik.Gecko2Chat.repository.MainRepository;
-import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.dominik.Gecko2Chat.utils.AuthStateManager;
 import com.dominik.Gecko2Chat.utils.UserManager;
 import com.google.android.material.button.MaterialButton;
@@ -107,7 +106,6 @@ public class LoginActivity extends AppCompatActivity {
 
                     if (userManager.getUser().isOnboarded()) {
                         MainRepository.getInstance(this).refreshStartupData();
-                        MessageRepository.getInstance(this).performDeltaSync();
 
                         startActivity(new Intent(this, MainActivity.class));
                         finish();

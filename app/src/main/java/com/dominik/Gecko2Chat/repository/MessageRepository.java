@@ -3,6 +3,7 @@ package com.dominik.Gecko2Chat.repository;
 import android.content.Context;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 
 import com.dominik.Gecko2Chat.database.AppDatabase;
@@ -46,8 +47,8 @@ public class MessageRepository {
     private final Gson gson = new GsonBuilder()
             .registerTypeAdapter(PrivateMessage.class, new PrivateMessageDeserializer())
             .create();
-    private MessageApi messageApi;
-    private MessageDao messageDao;
+    private final MessageApi messageApi;
+    private final MessageDao messageDao;
     private String currentConversationId = null;
 
 
@@ -170,7 +171,7 @@ public class MessageRepository {
 
         messageApi.getConversation(friendId, epoch, 20).enqueue(new Callback<ApiResponse<MessageHistoryDto>>() {
             @Override
-            public void onResponse(Call<ApiResponse<MessageHistoryDto>> call, Response<ApiResponse<MessageHistoryDto>> response) {
+            public void onResponse(@NonNull Call<ApiResponse<MessageHistoryDto>> call, @NonNull Response<ApiResponse<MessageHistoryDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {
 
                     List<MessageDto> messagesDto = response.body().data().messages();
@@ -190,7 +191,7 @@ public class MessageRepository {
             }
 
             @Override
-            public void onFailure(Call<ApiResponse<MessageHistoryDto>> call, Throwable t) {
+            public void onFailure(@NonNull Call<ApiResponse<MessageHistoryDto>> call, @NonNull Throwable t) {
                 Log.e("MessageRepository", "Network Failure: " + t.getMessage());
             }
         });

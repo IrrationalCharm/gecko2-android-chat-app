@@ -41,7 +41,7 @@ public class MainActivity extends BaseActivity {
         viewModel = new ViewModelProvider(this).get(MainViewModel.class);
 
         if (viewModel.getChatList().getValue() == null) {
-            viewModel.fetchStartupData(); //Loads friends list and user data from server
+            //viewModel.fetchStartupData(); //Loads friends list and user data from server
         }
 
         loadFragment(chatsFragment);

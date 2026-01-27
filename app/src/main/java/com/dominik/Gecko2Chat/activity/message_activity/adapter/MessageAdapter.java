@@ -6,6 +6,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.dominik.Gecko2Chat.R;
@@ -36,10 +37,34 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         notifyItemInserted(messageList.size() - messages.size());
     }
 
-    public void setMessages(List<MessageModel> messages) {
+    public void setMessages(List<MessageModel> newMessages) {
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+            @Override
+            public int getOldListSize() {
+                return messageList.size();
+            }
+
+            @Override
+            public int getNewListSize() {
+                return newMessages.size();
+            }
+
+            @Override
+            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                //Compare unique ids to check if it's the same message
+                return messageList.get(oldItemPosition).id().equals(newMessages.get(newItemPosition).id());
+            }
+
+            @Override
+            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                return messageList.get(oldItemPosition).equals(newMessages.get(newItemPosition));
+            }
+        });
+
         this.messageList.clear();
-        this.messageList.addAll(messages);
-        notifyDataSetChanged();
+        this.messageList.addAll(newMessages);
+        //Dispatch specific updates (inserts/removes) instead of refreshing everything
+        diffResult.dispatchUpdatesTo(this);
     }
 
 

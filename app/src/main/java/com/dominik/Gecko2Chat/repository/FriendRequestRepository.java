@@ -1,5 +1,6 @@
 package com.dominik.Gecko2Chat.repository;
 
+
 import android.content.Context;
 import android.util.Log;
 
@@ -19,6 +20,7 @@ import com.dominik.Gecko2Chat.model.response.websocket.FriendRequestReceivedDto;
 import com.dominik.Gecko2Chat.rest.RestClient;
 import com.dominik.Gecko2Chat.utils.ErrorUtils;
 import com.dominik.Gecko2Chat.utils.UserManager;
+import com.dominik.Gecko2Chat.utils.mapper.FriendRequestMapper;
 
 import java.time.Instant;
 import java.util.List;
@@ -64,16 +66,7 @@ public class FriendRequestRepository {
                     List<FriendRequestDto> friendRequests = response.body().data();
                     executor.execute(() -> {
                         List<FriendRequestEntity> friendRequestEntities = friendRequests.stream()
-                                .map(friendRequest -> new FriendRequestEntity(
-                                                                                String.valueOf(friendRequest.id()),
-                                                                                "INCOMING",
-                                                                                friendRequest.initiatorId().toString(),
-                                                                                friendRequest.receiverId().toString(),
-                                                                                friendRequest.initiatorUsername(),
-                                                                                friendRequest.initiatorDisplayName(),
-                                                                                friendRequest.initiatorUrlProfileImage(),
-                                                                                Instant.ofEpochSecond(friendRequest.createdAt())
-                                                                        ))
+                                .map(FriendRequestMapper::mapFriendRequestDtoToEntity)
                                 .toList();
 
                         friendRequestDao.insertAll(friendRequestEntities);
