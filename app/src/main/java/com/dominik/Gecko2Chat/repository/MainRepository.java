@@ -1,6 +1,7 @@
 package com.dominik.Gecko2Chat.repository;
 
 import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
@@ -130,7 +131,8 @@ public class MainRepository {
                 Log.d("MainRepository", "Startup data refreshed");
 
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                Log.e("MainRepository", "Error refreshing startup data", e);
+
             }
         });
 

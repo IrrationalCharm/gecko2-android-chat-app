@@ -83,14 +83,10 @@ public abstract class BaseActivity extends AppCompatActivity {
                 performLogout();
                 return;
             }
-
-            authStateManager.updateAuthState(state);
             userManager.saveUserFromIdToken(idToken);
 
             //Connect to websocket
-            if (accessToken != null) {
-                WebSocketManager.getInstance().connect(accessToken);
-            }
+            WebSocketManager.getInstance().connect(getApplicationContext());
         });
     }
 

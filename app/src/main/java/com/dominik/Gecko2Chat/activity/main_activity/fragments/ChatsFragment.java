@@ -1,19 +1,30 @@
 package com.dominik.Gecko2Chat.activity.main_activity.fragments;
 
+import android.animation.ValueAnimator;
 import android.content.Intent;
+import android.graphics.LinearGradient;
+import android.graphics.Matrix;
+import android.graphics.Shader;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.dominik.Gecko2Chat.R;
@@ -27,16 +38,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class ChatsFragment extends Fragment {
+public class ChatsFragment extends BaseConnectionFragment {
 
-    private TextView tvHeader;
-    private LinearLayout layoutConnecting;
     private RecyclerView recyclerView;
     private ChatAdapter adapter;
     private List<ChatModel> chatList;
 
-    private MainViewModel viewModel;
 
+    public ChatsFragment(WebSocketManager.ConnectionStatus lastStatus) {
+        super(lastStatus);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -44,11 +55,6 @@ public class ChatsFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_chat_list, container, false);
         recyclerView = view.findViewById(R.id.rvList);
-        tvHeader = view.findViewById(R.id.tvHeader);
-        layoutConnecting = view.findViewById(R.id.layoutConnecting);
-
-
-
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         chatList = new ArrayList<>();
@@ -61,7 +67,6 @@ public class ChatsFragment extends Fragment {
         });
         recyclerView.setAdapter(adapter);
 
-
         return view;
     }
 
@@ -69,31 +74,13 @@ public class ChatsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
-
-        viewModel.getConnectionStatus().observe(getViewLifecycleOwner(), status -> {
-            if (status == WebSocketManager.ConnectionStatus.CONNECTED) {
-                // Show Spinner, Hide "Chats"
-                tvHeader.setVisibility(View.VISIBLE);
-                layoutConnecting.setVisibility(View.GONE);
-
-            } else {
-                // Show "Chats", Hide Spinner
-                tvHeader.setVisibility(View.GONE);
-                layoutConnecting.setVisibility(View.VISIBLE);
-            }
-
-        });
 
         viewModel.getChatList().observe(getViewLifecycleOwner(), chats -> {
             chatList.clear();
             chatList.addAll(chats);
             adapter.notifyDataSetChanged();
         });
-
-        // 3. Observe Loading (Optional)
-
 
     }
 }

@@ -22,8 +22,8 @@ import com.google.android.material.card.MaterialCardView;
 
 public class MainActivity extends BaseActivity {
 
-    private final Fragment chatsFragment = new ChatsFragment();
-    private final Fragment contactFragment = new ContactsFragment();
+    private Fragment chatsFragment;
+    private Fragment contactFragment;
     private final Fragment profileFragment = new ProfileFragment();
     private TextView navContacts, navChats, tvProfileText;
     private MaterialCardView cvProfileImage;
@@ -40,9 +40,8 @@ public class MainActivity extends BaseActivity {
 
         viewModel = new ViewModelProvider(this).get(MainViewModel.class);
 
-        if (viewModel.getChatList().getValue() == null) {
-            //viewModel.fetchStartupData(); //Loads friends list and user data from server
-        }
+        chatsFragment = new ChatsFragment(viewModel.getConnectionStatus().getValue());
+        contactFragment = new ContactsFragment(viewModel.getConnectionStatus().getValue());
 
         loadFragment(chatsFragment);
     }
