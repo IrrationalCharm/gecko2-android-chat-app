@@ -16,7 +16,6 @@ import com.dominik.Gecko2Chat.activity.BaseActivity;
 import com.dominik.Gecko2Chat.activity.message_activity.adapter.MessageAdapter;
 import com.dominik.Gecko2Chat.utils.UserManager;
 import com.dominik.Gecko2Chat.viewmodel.MessageViewModel;
-import com.dominik.Gecko2Chat.model.response.websocket.*;
 
 
 public class MessageActivity extends BaseActivity {

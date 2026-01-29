@@ -2,7 +2,7 @@ package com.dominik.Gecko2Chat.utils.mapper;
 
 import com.dominik.Gecko2Chat.database.entities.FriendRequestEntity;
 import com.dominik.Gecko2Chat.model.FriendRequestModel;
-import com.dominik.Gecko2Chat.model.response.websocket.FriendRequestDto;
+import com.dominik.Gecko2Chat.model.websocket.FriendRequestDto;
 
 import java.time.Instant;
 

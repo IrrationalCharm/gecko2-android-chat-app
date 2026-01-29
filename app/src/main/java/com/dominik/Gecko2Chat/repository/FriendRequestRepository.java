@@ -15,8 +15,8 @@ import com.dominik.Gecko2Chat.enums.FriendRequestAction;
 import com.dominik.Gecko2Chat.model.api.ApiResponse;
 import com.dominik.Gecko2Chat.model.api.FriendshipApi;
 import com.dominik.Gecko2Chat.model.request.UpdateFriendRequestDto;
-import com.dominik.Gecko2Chat.model.response.websocket.FriendRequestDto;
-import com.dominik.Gecko2Chat.model.response.websocket.FriendRequestReceivedDto;
+import com.dominik.Gecko2Chat.model.websocket.FriendRequestDto;
+import com.dominik.Gecko2Chat.model.websocket.incoming.FriendRequestReceivedEvent;
 import com.dominik.Gecko2Chat.rest.RestClient;
 import com.dominik.Gecko2Chat.utils.ErrorUtils;
 import com.dominik.Gecko2Chat.utils.UserManager;
@@ -87,7 +87,7 @@ public class FriendRequestRepository {
 
 
 
-    public void incomingFriendRequest(FriendRequestReceivedDto dto) {
+    public void incomingFriendRequest(FriendRequestReceivedEvent dto) {
         Log.i("FriendRequestRepository", "Friend request received: " + dto);
 
         var friendRequest = new FriendRequestEntity(

@@ -1,6 +1,5 @@
-package com.dominik.Gecko2Chat.model.response.websocket;
+package com.dominik.Gecko2Chat.model.websocket;
 
-import java.time.Instant;
 import java.util.UUID;
 
 public record FriendRequestDto(

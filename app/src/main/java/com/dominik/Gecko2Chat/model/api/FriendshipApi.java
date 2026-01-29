@@ -2,7 +2,7 @@ package com.dominik.Gecko2Chat.model.api;
 
 import com.dominik.Gecko2Chat.model.request.UpdateFriendRequestDto;
 import com.dominik.Gecko2Chat.model.response.FriendDto;
-import com.dominik.Gecko2Chat.model.response.websocket.FriendRequestDto;
+import com.dominik.Gecko2Chat.model.websocket.FriendRequestDto;
 
 import java.util.List;
 import java.util.Set;

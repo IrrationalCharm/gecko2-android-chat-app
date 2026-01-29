@@ -13,11 +13,6 @@ import retrofit2.http.Query;
 
 public interface MessageApi {
 
-    @GET("/message-persistence-service/chat/conversation/{friendId}")
-    Call<ApiResponse<MessageHistoryDto>> getConversation(@Path("friendId") String friendId,
-                                                         @Query("page") int page,
-                                                         @Query("size") int size);
-
     @GET("/message-persistence-service/v2/chat/conversation/{friendId}")
     Call<ApiResponse<MessageHistoryDto>> getConversation(
             @Path("friendId") String friendId,
@@ -25,13 +20,6 @@ public interface MessageApi {
             @Query("size") int size
     );
 
-    /**
-     * @param page page of the conversations
-     * @param size number of conversations per page
-     * @return This returns a list of recent conversations, 20 messages per conversation
-     */
-    @GET("/message-persistence-service/chat/hydrated")
-    Call<ApiResponse<List<MessageHistoryDto>>> getHydratedConversation(@Query("page") int page, @Query("size") int size);
 
     @GET("/message-persistence-service/v2/chat/sync")
     Call<ApiResponse<List<MessageHistoryDto>>> getSyncConversation(@Query("sinceTimestamp") long sinceTimestamp);

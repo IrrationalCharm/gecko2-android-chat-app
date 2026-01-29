@@ -99,10 +99,7 @@ public class ContactsFragment extends Fragment {
             adapter.notifyDataSetChanged();
         });
 
-        // 3. Observe Loading (Optional)
-        viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
-            // Toggle your ProgressBar visibility here
-        });
+
 
 
     }

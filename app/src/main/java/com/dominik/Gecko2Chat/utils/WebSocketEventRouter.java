@@ -3,11 +3,13 @@ package com.dominik.Gecko2Chat.utils;
 
 import android.content.Context;
 
-import com.dominik.Gecko2Chat.model.response.websocket.ChatMessageDto;
-import com.dominik.Gecko2Chat.model.response.websocket.FriendRequestReceivedDto;
-import com.dominik.Gecko2Chat.model.response.websocket.MessageReceivedDto;
-import com.dominik.Gecko2Chat.model.response.websocket.PrivateMessage;
-import com.dominik.Gecko2Chat.model.response.websocket.adapter.PrivateMessageDeserializer;
+import com.dominik.Gecko2Chat.model.websocket.incoming.ChatMessageEvent;
+import com.dominik.Gecko2Chat.model.websocket.incoming.FriendRequestReceivedEvent;
+import com.dominik.Gecko2Chat.model.websocket.incoming.MessageDeliveredEvent;
+import com.dominik.Gecko2Chat.model.websocket.incoming.MessageReadEvent;
+import com.dominik.Gecko2Chat.model.websocket.incoming.MessageSentEvent;
+import com.dominik.Gecko2Chat.model.websocket.incoming.ServerMessage;
+import com.dominik.Gecko2Chat.model.websocket.adapter.ServerMessageDeserializer;
 import com.dominik.Gecko2Chat.repository.FriendRequestRepository;
 import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.google.gson.Gson;
@@ -36,7 +38,7 @@ public class WebSocketEventRouter {
         this.friendRepository = FriendRequestRepository.getInstance(context);
 
         this.gson = new GsonBuilder()
-                .registerTypeAdapter(PrivateMessage.class, new PrivateMessageDeserializer())
+                .registerTypeAdapter(ServerMessage.class, new ServerMessageDeserializer())
                 .create();
 
         subscribeToWebsocket();
@@ -61,16 +63,14 @@ public class WebSocketEventRouter {
     }
 
     private void routeMessages(String json) {
-        PrivateMessage message = gson.fromJson(json, PrivateMessage.class);
+        ServerMessage message = gson.fromJson(json, ServerMessage.class);
 
         switch (message) {
-            case MessageReceivedDto messageReceivedDto -> messageRepository.messageReceived(messageReceivedDto);
-            case ChatMessageDto messageDto -> messageRepository.incomingMessage(messageDto);
-            case FriendRequestReceivedDto friendRequestReceivedDto -> friendRepository.incomingFriendRequest(friendRequestReceivedDto);
-
-
-
-            default -> throw new IllegalStateException("Unexpected value: " + message);
+            case ChatMessageEvent event -> messageRepository.incomingMessage(event);
+            case MessageSentEvent event -> messageRepository.incomingMessageSent(event);
+            case MessageDeliveredEvent event -> messageRepository.incomingMessageDelivered(event);
+            case MessageReadEvent messageReadEvent -> messageRepository.incomingMessageRead(messageReadEvent);
+            case FriendRequestReceivedEvent event -> friendRepository.incomingFriendRequest(event);
         }
     }
 

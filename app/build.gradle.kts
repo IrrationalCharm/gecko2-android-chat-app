@@ -40,6 +40,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata:2.10.0")
     implementation("androidx.lifecycle:lifecycle-process:2.10.0")
     implementation("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
+    implementation("com.github.LottieFiles:dotlottie-android:0.5.0")
     // RxJava required by the above library
     implementation("io.reactivex.rxjava2:rxjava:2.2.5")
     implementation("io.reactivex.rxjava2:rxandroid:2.1.0")

@@ -14,8 +14,8 @@ import com.dominik.Gecko2Chat.database.entities.FriendEntity;
 import com.dominik.Gecko2Chat.database.entities.FriendRequestEntity;
 import com.dominik.Gecko2Chat.database.entities.MessageEntity;
 
-@Database(entities = {MessageEntity.class, FriendEntity.class, FriendRequestEntity.class}, version = 3)
-@TypeConverters({DateConverter.class})
+@Database(entities = {MessageEntity.class, FriendEntity.class, FriendRequestEntity.class}, version = 4)
+@TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
     public abstract MessageDao messageDao();
     public abstract FriendDao friendDao();

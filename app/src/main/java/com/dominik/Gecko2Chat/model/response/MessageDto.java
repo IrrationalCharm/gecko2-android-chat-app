@@ -1,5 +1,6 @@
 package com.dominik.Gecko2Chat.model.response;
 
+import com.dominik.Gecko2Chat.enums.MessageStatus;
 import com.dominik.Gecko2Chat.enums.TextType;
 
 import java.time.Instant;
@@ -11,8 +12,9 @@ public record MessageDto(
         String conversationId,
         String senderId,
         String content,
+        MessageStatus status,
         Instant timestamp,
-        TextType textType
+        TextType type
 ) {
 }
 

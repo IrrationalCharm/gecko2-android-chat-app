@@ -1,11 +1,14 @@
 package com.dominik.Gecko2Chat.activity.message_activity.adapter;
 
+import android.graphics.PorterDuff;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -110,24 +113,58 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     static class SentMessageViewHolder extends RecyclerView.ViewHolder {
         TextView tvMessageTime, tvMessageContent;
+        ImageView ivMessageStatus;
         public SentMessageViewHolder(@NonNull View itemView) {
             super(itemView);
             tvMessageTime = itemView.findViewById(R.id.tvMessageTime);
             tvMessageContent = itemView.findViewById(R.id.tvMessageContent);
+            ivMessageStatus = itemView.findViewById(R.id.ivMessageStatus);
         }
 
         void bind(MessageModel message) {
-            tvMessageTime.setText(message.timestamp().toString());
             tvMessageContent.setText(message.content());
+
+            switch (message.status()) {
+                case SENDING -> {
+                    tvMessageTime.setVisibility(View.GONE);
+                    ivMessageStatus.setImageResource(R.drawable.ic_clock);
+                }
+                case SENT -> {
+                    tvMessageTime.setVisibility(View.VISIBLE);
+                    ivMessageStatus.setImageResource(R.drawable.ic_tick);
+                    tvMessageTime.setText(message.timestamp().toString());
+                }
+                case DELIVERED -> {
+                    tvMessageTime.setVisibility(View.VISIBLE);
+                    ivMessageStatus.setImageResource(R.drawable.ic_double_tick);
+                    tvMessageTime.setText(message.timestamp().toString());
+                }
+                case READ -> {
+                    tvMessageTime.setVisibility(View.VISIBLE);
+                    ivMessageStatus.setImageResource(R.drawable.ic_double_tick);
+                    ivMessageStatus.setColorFilter(
+                            ContextCompat.getColor(ivMessageStatus.getContext(), R.color.blue_read_receipt),
+                            PorterDuff.Mode.SRC_IN
+                    );
+                    tvMessageTime.setText(message.timestamp().toString());
+                }
+                case FAILED -> {
+                }
+            };
+
+             //TODO: Format timestamp
+
         }
     }
 
     static class ReceivedMessageViewHolder extends RecyclerView.ViewHolder {
         TextView tvMessageTime, tvMessageContent;
+
         public ReceivedMessageViewHolder(@NonNull View itemView) {
             super(itemView);
             tvMessageTime = itemView.findViewById(R.id.tvMessageTime);
             tvMessageContent = itemView.findViewById(R.id.tvMessageContent);
+
         }
 
         void bind(MessageModel message) {

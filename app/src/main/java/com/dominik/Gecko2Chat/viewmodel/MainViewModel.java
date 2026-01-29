@@ -2,6 +2,7 @@ package com.dominik.Gecko2Chat.viewmodel;
 
 import android.app.Application;
 import android.content.SharedPreferences;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -19,9 +20,15 @@ import com.dominik.Gecko2Chat.repository.FriendRequestRepository;
 import com.dominik.Gecko2Chat.repository.MainRepository;
 import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.dominik.Gecko2Chat.utils.UserManager;
+import com.dominik.Gecko2Chat.utils.WebSocketManager;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 public class MainViewModel extends AndroidViewModel {
 
@@ -31,13 +38,16 @@ public class MainViewModel extends AndroidViewModel {
 
     private final UserManager userManager;
 
-    private final SharedPreferences.OnSharedPreferenceChangeListener userPrefsListener;
+    private SharedPreferences.OnSharedPreferenceChangeListener userPrefsListener;
 
     private final MutableLiveData<User> currentUser = new MutableLiveData<>();
     private final MediatorLiveData<List<ChatModel>> chatList = new MediatorLiveData<>();
     private LiveData<List<ContactModel >> contactList = new MutableLiveData<>();
     private final LiveData<Integer> friendRequestsCount;
-    private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
+
+    //Monitor connection status
+    private final MutableLiveData<WebSocketManager.ConnectionStatus> connectionStatus = new MutableLiveData<>();
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
 
     public MainViewModel(@NonNull Application application) {
@@ -47,18 +57,10 @@ public class MainViewModel extends AndroidViewModel {
         messageRepository = MessageRepository.getInstance(application);
         friendRequestRepository = FriendRequestRepository.getInstance(application);
         userManager = UserManager.getInstance(application);
-
         friendRequestsCount = friendRequestRepository.getFriendRequestsCount();
 
-
-        // Listen to changes in SharedPreferences related to the User object
-        userPrefsListener = (sharedPreferences, key) -> {
-            //Check if the changed key is relevant to the User object
-            if (userManager.isUserKey(key)) {
-                loadCurrentUser();
-            }
-        };
-        userManager.registerOnSharedPreferenceChangeListener(userPrefsListener);
+        monitorConnectionStatus();
+        monitorUserPreferences();
 
         LiveData<List<FriendEntity>> friendsList = mainRepository.getFriends();
         LiveData<List<MessageEntity>> recentMessageEntities = messageRepository.getRecentChats();
@@ -72,6 +74,17 @@ public class MainViewModel extends AndroidViewModel {
                         .toList());
 
         loadCurrentUser();
+    }
+
+    private void monitorUserPreferences() {
+        // Listen to changes in SharedPreferences related to the User object
+        userPrefsListener = (sharedPreferences, key) -> {
+            //Check if the changed key is relevant to the User object
+            if (userManager.isUserKey(key)) {
+                loadCurrentUser();
+            }
+        };
+        userManager.registerOnSharedPreferenceChangeListener(userPrefsListener);
     }
 
 
@@ -99,7 +112,6 @@ public class MainViewModel extends AndroidViewModel {
             String name = "Unknown";
             String avatar = null;
 
-
             for (FriendEntity f : friends) {
                 if (f.internalId.equals(otherUserId)) {
                     name = f.displayName;
@@ -117,23 +129,34 @@ public class MainViewModel extends AndroidViewModel {
         chatList.setValue(newUiList);
     }
 
-    /**
-     * Refreshes friends list and User data
-     * Reloads from SharedPreferences the logged-in user data into LiveData currentUser
-     */
-    public void fetchStartupData() {
-        mainRepository.refreshStartupData();
+
+    private void monitorConnectionStatus() {
+        // 4. Update the LiveData
+        Disposable d = WebSocketManager.getInstance().getConnectionStatus()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread()) // Ensure we are on UI thread for LiveData
+                .subscribe(
+                        connectionStatus::setValue,
+                        throwable -> {
+                            // Handle error if needed, usually just log it
+                            Log.e("ChatViewModel", "Error observing connection status", throwable);
+                        }
+                );
+
+        compositeDisposable.add(d);
     }
+
+
     public LiveData<List<ChatModel>> getChatList() { return chatList; }
     public LiveData<Integer> getFriendRequestsCount() {return friendRequestsCount; }
     public LiveData<List<ContactModel>> getContactList() { return contactList; }
-    public LiveData<Boolean> getIsLoading() { return isLoading; }
     public LiveData<User> getCurrentUser() { return currentUser; }
-
+    public LiveData<WebSocketManager.ConnectionStatus> getConnectionStatus() {return connectionStatus;}
 
     @Override
     protected void onCleared() {
         super.onCleared();
         userManager.unregisterOnSharedPreferenceChangeListener(userPrefsListener);
+        compositeDisposable.clear();
     }
 }

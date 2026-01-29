@@ -1,6 +1,6 @@
 package com.dominik.Gecko2Chat.model.response;
 
-import com.dominik.Gecko2Chat.model.response.websocket.FriendRequestDto;
+import com.dominik.Gecko2Chat.model.websocket.FriendRequestDto;
 
 import java.util.List;
 import java.util.Set;

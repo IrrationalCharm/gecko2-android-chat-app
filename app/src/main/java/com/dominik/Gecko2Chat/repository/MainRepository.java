@@ -17,7 +17,7 @@ import com.dominik.Gecko2Chat.model.api.ApiResponse;
 import com.dominik.Gecko2Chat.model.api.UserApi;
 import com.dominik.Gecko2Chat.model.response.MessageHistoryDto;
 import com.dominik.Gecko2Chat.model.response.StartupDto;
-import com.dominik.Gecko2Chat.model.response.websocket.FriendRequestDto;
+import com.dominik.Gecko2Chat.model.websocket.FriendRequestDto;
 import com.dominik.Gecko2Chat.rest.RestClient;
 import com.dominik.Gecko2Chat.utils.ConversationUtils;
 import com.dominik.Gecko2Chat.utils.UserManager;

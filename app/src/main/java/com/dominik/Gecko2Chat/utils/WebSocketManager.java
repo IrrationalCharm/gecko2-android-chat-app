@@ -2,6 +2,16 @@ package com.dominik.Gecko2Chat.utils;
 
 import android.util.Log;
 
+import com.dominik.Gecko2Chat.model.websocket.incoming.ServerMessage;
+import com.dominik.Gecko2Chat.model.websocket.adapter.ServerMessageDeserializer;
+import com.dominik.Gecko2Chat.model.websocket.outgoing.ClientMessage;
+import com.dominik.Gecko2Chat.model.websocket.outgoing.SendDeliveredReceiptRequest;
+import com.dominik.Gecko2Chat.model.websocket.outgoing.SendMessageRequest;
+import com.dominik.Gecko2Chat.model.websocket.outgoing.SendReadReceiptRequest;
+import com.dominik.Gecko2Chat.model.websocket.outgoing.SendTypingStatusRequest;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -21,10 +31,23 @@ import ua.naiksoftware.stomp.dto.StompHeader;
  * Keeps the connection alive and provides a raw stream of data.
  */
 public class WebSocketManager {
+    private static final String CHAT_MESSAGE_CLIENT = "/app/chat";
+    private static final String READ_RECEIPT_CLIENT = "/app/read-receipt";
+    private static final String DELIVERY_RECEIPT_CLIENT = "/app/delivered-receipt";
+    private static final String TYPING_STATUS_CLIENT = "/app/typing";
+
     private static WebSocketManager instance;
     private StompClient stompClient;
     private final String WS_URL = "ws://10.0.2.2:8081/ws";
     private CompositeDisposable compositeDisposable;
+    private Disposable lifecycleDisposable; //Specific disposable for the connection lifecycle to prevent duplicates
+    private Disposable reconnectDisposable; //Specific disposable for the reconnection timer
+
+    private final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(ServerMessage.class, new ServerMessageDeserializer())
+            .create();
+
+    private boolean isIntentionalDisconnect = false;
 
     //A "live pipe" that emits data only to listeners watching right now
     private final PublishSubject<String> messageSubject = PublishSubject.create();
@@ -41,7 +64,16 @@ public class WebSocketManager {
     }
 
     public void connect(String jwtToken) {
-        if (stompClient != null && stompClient.isConnected()) return;
+        isIntentionalDisconnect = false;
+
+        //Force cleanup, dispose of the previous lifecycle listener
+        if(lifecycleDisposable != null && !lifecycleDisposable.isDisposed()) {
+            lifecycleDisposable.dispose();
+        }
+        //Cancel any pending reconnect attempts if we are manually connecting now
+        if(reconnectDisposable != null && !reconnectDisposable.isDisposed()) {
+            reconnectDisposable.dispose();
+        }
 
         statusSubject.onNext(ConnectionStatus.CONNECTING);
 
@@ -52,40 +84,55 @@ public class WebSocketManager {
 
         stompClient.connect(headers);
 
-        Disposable d = stompClient.lifecycle()
+        lifecycleDisposable = stompClient.lifecycle()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(lifecycleEvent -> {
                     switch (lifecycleEvent.getType()) {
                         case OPENED:
                             Log.d("WS", "Stomp connection opened");
-                            statusSubject.onNext(ConnectionStatus.CONNECTED);
                             subscribeToPrivateMessages();
                             break;
 
                         case ERROR:
                             Log.e("WS", "Error", lifecycleEvent.getException());
                             statusSubject.onNext(ConnectionStatus.ERROR);
-                            scheduleReconnect(jwtToken);
+                            if(!isIntentionalDisconnect) {
+                                scheduleReconnect(jwtToken);
+                            }
                             break;
                         case CLOSED:
                             Log.d("WS", "Stomp connection closed");
                             statusSubject.onNext(ConnectionStatus.DISCONNECTED);
+                            if(!isIntentionalDisconnect) {
+                                scheduleReconnect(jwtToken);
+                            }
                             break;
                     }
                 });
-        compositeDisposable.add(d);
     }
 
     private void scheduleReconnect(String jwtToken) {
-        Disposable d = Observable.timer(3, TimeUnit.SECONDS)
+        //Avoid duplicate reconnect attempts
+        if(reconnectDisposable != null && !reconnectDisposable.isDisposed()) {
+            return;
+        }
+
+        reconnectDisposable = Observable.timer(3, TimeUnit.SECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(aLong -> {
                     Log.d("WS", "Attempting Reconnect...");
                     connect(jwtToken);
                 });
+    }
 
-        compositeDisposable.add(d);
+    public void disconnect() {
+        isIntentionalDisconnect = true; //Force stops the reconnection
+
+        if (stompClient != null) stompClient.disconnect();
+        if (lifecycleDisposable != null) lifecycleDisposable.dispose();
+        if (reconnectDisposable != null) reconnectDisposable.dispose();
+        if (compositeDisposable != null) compositeDisposable.clear();
     }
 
     public Observable<String> getMessageStream() {
@@ -108,17 +155,26 @@ public class WebSocketManager {
         compositeDisposable.add(d);
     }
 
-    public void sendMessage(String jsonPayload) {
-        //Maps to @MessageMapping("/chat") in ChatController
-        Disposable d = stompClient.send("/app/chat", jsonPayload)
+
+    private void sendMessage(String destination, String jsonPayload) {
+        Disposable d = stompClient.send(destination, jsonPayload)
                 .subscribeOn(Schedulers.io())
                 .subscribe(() -> Log.d("WS", "Message Sent"), t -> Log.e("WS", "Send error", t));
         compositeDisposable.add(d);
     }
 
-    public void disconnect() {
-        if (stompClient != null) stompClient.disconnect();
-        if (compositeDisposable != null) compositeDisposable.clear();
+
+    public void send(ClientMessage message) {
+        String json = gson.toJson(message);
+
+        String destination = switch (message) {
+            case SendDeliveredReceiptRequest ignored -> DELIVERY_RECEIPT_CLIENT;
+            case SendMessageRequest ignored -> CHAT_MESSAGE_CLIENT;
+            case SendReadReceiptRequest ignored -> READ_RECEIPT_CLIENT;
+            case SendTypingStatusRequest ignored -> TYPING_STATUS_CLIENT;
+        };
+
+        sendMessage(destination, json);
     }
 
     public enum ConnectionStatus {

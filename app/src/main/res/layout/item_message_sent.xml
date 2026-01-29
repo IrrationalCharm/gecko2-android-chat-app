@@ -49,7 +49,7 @@
                 android:alpha="0.8"/>
 
             <ImageView
-                android:id="@+id/imgMessageStatus"
+                android:id="@+id/ivMessageStatus"
                 android:layout_width="14dp"
                 android:layout_height="14dp"
                 android:layout_marginStart="4dp"

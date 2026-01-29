@@ -1,10 +1,11 @@
 package com.dominik.Gecko2Chat.utils;
 
 import com.dominik.Gecko2Chat.database.entities.MessageEntity;
+import com.dominik.Gecko2Chat.enums.MessageStatus;
 import com.dominik.Gecko2Chat.enums.TextType;
 import com.dominik.Gecko2Chat.model.MessageModel;
 import com.dominik.Gecko2Chat.model.response.MessageDto;
-import com.dominik.Gecko2Chat.model.response.websocket.ChatMessageDto;
+import com.dominik.Gecko2Chat.model.websocket.outgoing.SendMessageRequest;
 
 import java.time.Instant;
 
@@ -21,19 +22,20 @@ public final class ConversationUtils {
 
     //Message model is for frontend UI.
     public static MessageModel mapEntityToMessageModel(MessageEntity entity) {
-        TextType type = TextType.valueOf(entity.textType);
+        TextType type = TextType.valueOf(entity.type);
 
         return new MessageModel(
                 entity.messageId,
                 entity.senderId,
                 entity.recipientId,
                 entity.content,
+                entity.status,
                 entity.timestamp,
                 type);
     }
 
-    //ChatMessageDto is from real time chat
-    public static MessageEntity mapChatMessageDtoToMessageEntity(ChatMessageDto dto) {
+    //
+    public static MessageEntity mapChatMessageDtoToMessageEntity(SendMessageRequest dto) {
         var entity = new MessageEntity();
         entity.messageId = dto.clientMsgId();
         entity.conversationId = getConversationId(dto.senderId(), dto.recipientId());
@@ -41,8 +43,8 @@ public final class ConversationUtils {
         entity.recipientId = dto.recipientId();
         entity.content = dto.content();
         entity.timestamp = Instant.parse(dto.timestamp());
-        entity.status = "STATUS_SENDING";
-        entity.textType = dto.textType().name();
+        entity.status = MessageStatus.SENDING;
+        entity.type = dto.textType().toString();
         return entity;
     }
 
@@ -56,8 +58,8 @@ public final class ConversationUtils {
         entity.recipientId = dto.conversationId().split(":")[0].equals(dto.senderId()) ? dto.conversationId().split(":")[1] : dto.conversationId().split(":")[0];
         entity.content = dto.content();
         entity.timestamp = dto.timestamp();
-        entity.status = "SENT";
-        entity.textType = dto.textType().toString();
+        entity.status = dto.status();
+        entity.type = dto.type().toString();
 
         return entity;
     }

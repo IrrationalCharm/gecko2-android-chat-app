@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
 import com.dominik.Gecko2Chat.database.entities.MessageEntity;
+import com.dominik.Gecko2Chat.enums.MessageStatus;
 
 import java.time.Instant;
 import java.util.List;
@@ -24,6 +25,12 @@ public interface MessageDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertMessage(MessageEntity message);
+
+    @Query("UPDATE messages SET status = :status, timestamp = :timestamp WHERE messageId = :messageId")
+    void updateStatusAndTimestamp(String messageId, MessageStatus status, Instant timestamp);
+
+    @Query("UPDATE messages SET status = :status WHERE messageId = :messageId")
+    void updateStatus(String messageId, MessageStatus status);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<MessageEntity> messages);

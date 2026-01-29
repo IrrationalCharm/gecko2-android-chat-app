@@ -2,13 +2,21 @@ package com.dominik.Gecko2Chat.database;
 
 import androidx.room.TypeConverter;
 
+import com.dominik.Gecko2Chat.enums.MessageStatus;
+
 import java.time.Instant;
 
+public class Converters {
 
-/**
- * Used for converting Instant to timestamp and vice versa
- */
-public class DateConverter {
+    @TypeConverter
+    public static String fromStatus(MessageStatus status) {
+        return status == null ? null : status.name();
+    }
+
+    @TypeConverter
+    public static MessageStatus toStatus(String status) {
+        return status == null ? null : MessageStatus.valueOf(status);
+    }
 
     @TypeConverter
     public static Instant fromTimestamp(Long value) {

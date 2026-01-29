@@ -13,12 +13,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.main_activity.adapter.ChatAdapter;
 import com.dominik.Gecko2Chat.activity.message_activity.MessageActivity;
 import com.dominik.Gecko2Chat.model.ChatModel;
+import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.dominik.Gecko2Chat.viewmodel.MainViewModel;
 
 import java.util.ArrayList;
@@ -27,6 +29,8 @@ import java.util.List;
 
 public class ChatsFragment extends Fragment {
 
+    private TextView tvHeader;
+    private LinearLayout layoutConnecting;
     private RecyclerView recyclerView;
     private ChatAdapter adapter;
     private List<ChatModel> chatList;
@@ -40,6 +44,11 @@ public class ChatsFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_chat_list, container, false);
         recyclerView = view.findViewById(R.id.rvList);
+        tvHeader = view.findViewById(R.id.tvHeader);
+        layoutConnecting = view.findViewById(R.id.layoutConnecting);
+
+
+
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         chatList = new ArrayList<>();
@@ -63,6 +72,20 @@ public class ChatsFragment extends Fragment {
 
         viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
+        viewModel.getConnectionStatus().observe(getViewLifecycleOwner(), status -> {
+            if (status == WebSocketManager.ConnectionStatus.CONNECTED) {
+                // Show Spinner, Hide "Chats"
+                tvHeader.setVisibility(View.VISIBLE);
+                layoutConnecting.setVisibility(View.GONE);
+
+            } else {
+                // Show "Chats", Hide Spinner
+                tvHeader.setVisibility(View.GONE);
+                layoutConnecting.setVisibility(View.VISIBLE);
+            }
+
+        });
+
         viewModel.getChatList().observe(getViewLifecycleOwner(), chats -> {
             chatList.clear();
             chatList.addAll(chats);
@@ -70,9 +93,7 @@ public class ChatsFragment extends Fragment {
         });
 
         // 3. Observe Loading (Optional)
-        viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
-            // Toggle your ProgressBar visibility here
-        });
+
 
     }
 }

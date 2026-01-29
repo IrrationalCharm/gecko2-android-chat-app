@@ -7,19 +7,24 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 
 import com.dominik.Gecko2Chat.database.AppDatabase;
-import com.dominik.Gecko2Chat.database.DateConverter;
 import com.dominik.Gecko2Chat.database.dao.MessageDao;
 import com.dominik.Gecko2Chat.database.entities.MessageEntity;
-import com.dominik.Gecko2Chat.enums.PrivateMessageType;
+import com.dominik.Gecko2Chat.enums.MessageStatus;
+import com.dominik.Gecko2Chat.enums.MessageType;
 import com.dominik.Gecko2Chat.enums.TextType;
 import com.dominik.Gecko2Chat.model.api.ApiResponse;
 import com.dominik.Gecko2Chat.model.api.MessageApi;
 import com.dominik.Gecko2Chat.model.response.MessageDto;
 import com.dominik.Gecko2Chat.model.response.MessageHistoryDto;
-import com.dominik.Gecko2Chat.model.response.websocket.ChatMessageDto;
-import com.dominik.Gecko2Chat.model.response.websocket.MessageReceivedDto;
-import com.dominik.Gecko2Chat.model.response.websocket.PrivateMessage;
-import com.dominik.Gecko2Chat.model.response.websocket.adapter.PrivateMessageDeserializer;
+import com.dominik.Gecko2Chat.model.websocket.incoming.ChatMessageEvent;
+import com.dominik.Gecko2Chat.model.websocket.incoming.MessageDeliveredEvent;
+import com.dominik.Gecko2Chat.model.websocket.incoming.MessageReadEvent;
+import com.dominik.Gecko2Chat.model.websocket.incoming.MessageSentEvent;
+import com.dominik.Gecko2Chat.model.websocket.incoming.ServerMessage;
+import com.dominik.Gecko2Chat.model.websocket.adapter.ServerMessageDeserializer;
+import com.dominik.Gecko2Chat.model.websocket.outgoing.ClientMessage;
+import com.dominik.Gecko2Chat.model.websocket.outgoing.SendDeliveredReceiptRequest;
+import com.dominik.Gecko2Chat.model.websocket.outgoing.SendMessageRequest;
 import com.dominik.Gecko2Chat.rest.RestClient;
 import com.dominik.Gecko2Chat.utils.ConversationUtils;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
@@ -34,7 +39,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-import io.reactivex.disposables.CompositeDisposable;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -42,10 +46,9 @@ import retrofit2.Response;
 public class MessageRepository {
 
     private static MessageRepository instance;
-    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Gson gson = new GsonBuilder()
-            .registerTypeAdapter(PrivateMessage.class, new PrivateMessageDeserializer())
+            .registerTypeAdapter(ServerMessage.class, new ServerMessageDeserializer())
             .create();
     private final MessageApi messageApi;
     private final MessageDao messageDao;
@@ -65,7 +68,7 @@ public class MessageRepository {
     }
 
 
-    public void incomingMessage(ChatMessageDto dto) {
+    public void incomingMessage(ChatMessageEvent dto) {
         Log.i("MessageRepository", "Message received: " + dto.content());
         var mEntity = new MessageEntity();
         mEntity.messageId = dto.clientMsgId();
@@ -74,9 +77,22 @@ public class MessageRepository {
         mEntity.recipientId = dto.recipientId();
         mEntity.content = dto.content();
         mEntity.timestamp = Instant.parse(dto.timestamp());
-        mEntity.textType = dto.textType().toString();
+        mEntity.type = dto.textType().toString();
 
-        executor.execute(() -> messageDao.insertMessage(mEntity));
+        executor.execute(() -> {
+            messageDao.insertMessage(mEntity);
+
+            ClientMessage delivered = new SendDeliveredReceiptRequest(
+                    MessageType.DELIVERY_RECEIPT_CLIENT,
+                    mEntity.recipientId, //Im the recipient of the incoming message but the sender of the delivered receipt
+                    mEntity.senderId,
+                    mEntity.messageId,
+                    mEntity.conversationId,
+                    mEntity.timestamp.toString()
+                    );
+
+            WebSocketManager.getInstance().send(delivered);
+        });
 
         // Emit notification if its not the current conversation
         if (currentConversationId != null && !currentConversationId.equals(mEntity.conversationId)) {
@@ -87,13 +103,27 @@ public class MessageRepository {
     }
 
 
-    public void messageReceived(MessageReceivedDto dto) {
-        Log.i("MessageRepository", "Message acknowledged by server received: " + dto.uuid());
+    //Confirmation by server that message was received
+    public void incomingMessageSent(MessageSentEvent event) {
+        Log.i("MessageRepository", "Message acknowledged by server received: " + event.messageId());
+        executor.execute(() -> messageDao.updateStatusAndTimestamp(event.messageId(), MessageStatus.SENT, Instant.parse(event.timestamp())));
+    }
+
+    //Confirmation by server that message was received by recipient
+    public void incomingMessageDelivered(MessageDeliveredEvent event) {
+        Log.i("MessageRepository", "Message delivered by server received: " + event.messageId());
+        executor.execute(() -> messageDao.updateStatus(event.messageId(), MessageStatus.DELIVERED));
+    }
+
+    //Confirmation by server that message was read by recipient
+    public void incomingMessageRead(MessageReadEvent event) {
+        Log.i("MessageRepository", "Message read by server received: " + event.messageId());
+        executor.execute(() -> messageDao.updateStatus(event.messageId(), MessageStatus.READ));
     }
 
 
-    public void performDeltaSync() {
 
+    public void performDeltaSync() {
         executor.execute(() -> { //Room cannot be executed in main thread
             Instant latestTimestamp = messageDao.getLatestTimestamp();
             long timestampEpoch = latestTimestamp == null ? 0 : latestTimestamp.toEpochMilli();
@@ -131,22 +161,21 @@ public class MessageRepository {
 
 
     public void sendMessage(String myId, String currentFriendId, String content) {
-        var dto = new ChatMessageDto(
-                PrivateMessageType.CHAT_MESSAGE,
+        var message = new SendMessageRequest(
+                MessageType.CHAT_MESSAGE_CLIENT,
                 UUID.randomUUID().toString(),
                 myId,
                 currentFriendId,
                 TextType.TEXT,
                 content,
-                Instant.now().toString()
+                Instant.now().toString() //To be overwritten by server
         );
 
-        String json = gson.toJson(dto);
-        Log.i("Chat", "Sending message: " + json);
-        WebSocketManager.getInstance().sendMessage(json);
+        Log.i("Chat", "Sending message: " + message);
+        WebSocketManager.getInstance().send(message);
 
         executor.execute(() -> {
-            MessageEntity messageEntity = ConversationUtils.mapChatMessageDtoToMessageEntity(dto);
+            MessageEntity messageEntity = ConversationUtils.mapChatMessageDtoToMessageEntity(message);
             messageDao.insertMessage(messageEntity);
         });
 
@@ -167,7 +196,7 @@ public class MessageRepository {
     }
 
     private void fetchAndInsertMessages(String friendId, Instant beforeTime) {
-        long epoch = DateConverter.dateToTimestamp(beforeTime);
+        long epoch = beforeTime.toEpochMilli();
 
         messageApi.getConversation(friendId, epoch, 20).enqueue(new Callback<ApiResponse<MessageHistoryDto>>() {
             @Override

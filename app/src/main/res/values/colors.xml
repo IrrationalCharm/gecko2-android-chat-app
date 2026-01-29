@@ -27,6 +27,7 @@
 
 
 
+    <color name="blue_read_receipt">#34B7F1</color>
 
     <color name="green_primary">#25D366</color> <color name="green_dark">#075E54</color>
     <color name="light_gray2">#F0F0F0</color>
