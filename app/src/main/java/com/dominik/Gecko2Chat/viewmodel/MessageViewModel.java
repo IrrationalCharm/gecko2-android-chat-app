@@ -1,6 +1,7 @@
 package com.dominik.Gecko2Chat.viewmodel;
 
 import android.app.Application;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -12,25 +13,32 @@ import com.dominik.Gecko2Chat.model.MessageModel;
 import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.dominik.Gecko2Chat.utils.ConversationUtils;
 import com.dominik.Gecko2Chat.utils.UserManager;
+import com.dominik.Gecko2Chat.utils.WebSocketManager;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
+
 public class MessageViewModel extends AndroidViewModel {
 
     private final MessageRepository repository;
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private final MutableLiveData<WebSocketManager.ConnectionStatus> connectionStatus = new MutableLiveData<>();
     private final MutableLiveData<Integer> messageLimit = new MutableLiveData<>(20);
     private LiveData<List<MessageModel>> messageList = new MutableLiveData<>(new ArrayList<>());
     private boolean isLoading = false;
     //private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
 
     private String myId;
-    private UserManager userManager;
+    private final UserManager userManager;
 
     private String currentFriendId;
 
-    private int currentPage = 0;
     private boolean isLastPage = false;
 
 
@@ -49,6 +57,7 @@ public class MessageViewModel extends AndroidViewModel {
 
         repository.setCurrentConversationId(conversationId);
 
+        monitorConnectionStatus();
 
         //whenever "messageLimit" changes, this function runs again, which retrieve the messages from db and maps them to MessageModel
         messageList = Transformations.switchMap(messageLimit, limit ->
@@ -58,6 +67,20 @@ public class MessageViewModel extends AndroidViewModel {
                                 .toList()
                 )
         );
+    }
+
+
+    private void monitorConnectionStatus() {
+        // 4. Update the LiveData
+        Disposable d = WebSocketManager.getInstance().getConnectionStatus()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        connectionStatus::setValue,
+                        throwable -> Log.e("ChatViewModel", "Error observing connection status", throwable)
+                );
+
+        compositeDisposable.add(d);
     }
 
 
@@ -80,12 +103,8 @@ public class MessageViewModel extends AndroidViewModel {
         isLoading = false;
     }
 
-
-    public LiveData<List<MessageModel>> getMessageList() {
-        return messageList;
-    }
-
-
+    public LiveData<List<MessageModel>> getMessageList() {return messageList;}
+    public LiveData<WebSocketManager.ConnectionStatus> getConnectionStatus() {return connectionStatus;}
     public void addNewMessage(String content) {
         repository.sendMessage(myId, currentFriendId, content);
     }
@@ -94,5 +113,6 @@ public class MessageViewModel extends AndroidViewModel {
     protected void onCleared() {
         super.onCleared();
         repository.clearCurrentConversationId();
+        compositeDisposable.clear();
     }
 }

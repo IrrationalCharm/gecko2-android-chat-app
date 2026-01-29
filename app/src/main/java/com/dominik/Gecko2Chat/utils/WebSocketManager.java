@@ -15,9 +15,13 @@ import com.dominik.Gecko2Chat.model.websocket.outgoing.SendTypingStatusRequest;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import net.openid.appauth.AppAuthConfiguration;
 import net.openid.appauth.AuthState;
 import net.openid.appauth.AuthorizationService;
+import net.openid.appauth.connectivity.ConnectionBuilder;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -77,8 +81,18 @@ public class WebSocketManager {
 
 
     private void initAuth(Context context) {
+        //TODO remove this!
+        ConnectionBuilder connectionBuilder = uri -> {
+            URL url = new URL(uri.toString());
+            return (HttpURLConnection) url.openConnection();
+        };
+
+        AppAuthConfiguration authConfig = new AppAuthConfiguration.Builder()
+                .setConnectionBuilder(connectionBuilder)
+                .build();
+
         if (authService == null) {
-            authService = new AuthorizationService(context.getApplicationContext());
+            authService = new AuthorizationService(context.getApplicationContext(), authConfig);
         }
         if (authStateManager == null) {
             authStateManager = new AuthStateManager(context.getApplicationContext());
@@ -103,6 +117,7 @@ public class WebSocketManager {
                 statusSubject.onNext(ConnectionStatus.ERROR);
 
                 Intent intent = new Intent(context, LoginActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(intent);
                 return;
             }
@@ -157,7 +172,6 @@ public class WebSocketManager {
                             break;
                     }
                 });
-
     }
 
 

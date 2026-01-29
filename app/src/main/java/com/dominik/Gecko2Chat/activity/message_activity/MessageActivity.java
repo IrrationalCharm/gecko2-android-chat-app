@@ -15,6 +15,7 @@ import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.BaseActivity;
 import com.dominik.Gecko2Chat.activity.message_activity.adapter.MessageAdapter;
 import com.dominik.Gecko2Chat.utils.UserManager;
+import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.dominik.Gecko2Chat.viewmodel.MessageViewModel;
 
 
@@ -28,7 +29,7 @@ public class MessageActivity extends BaseActivity {
     private ImageView btnBack;
     private CardView btnSend;
     private String friendId, friendName;
-
+    private TextView tvChatStatus;
     private MessageViewModel messageViewModel;
 
 
@@ -47,6 +48,8 @@ public class MessageActivity extends BaseActivity {
         messageViewModel = new ViewModelProvider(this).get(MessageViewModel.class);
         messageViewModel.initChat(friendId);
 
+
+        //Populates recycle view of messages
         messageViewModel.getMessageList().observe(this, messages -> {
             int oldSize = adapter.getItemCount();
             adapter.setMessages(messages);
@@ -63,6 +66,16 @@ public class MessageActivity extends BaseActivity {
                         rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
                     }
                 }
+            }
+        });
+
+
+        //Monitor connection status
+        messageViewModel.getConnectionStatus().observe(this, status -> {
+            if (status == WebSocketManager.ConnectionStatus.CONNECTED) {
+                tvChatStatus.setText("Online"); //TODO make this dependent on user activity
+            } else {
+                tvChatStatus.setText("Waiting for network...");
             }
         });
 
@@ -104,18 +117,17 @@ public class MessageActivity extends BaseActivity {
 
 
 
-
     private void initListeners() {
         btnBack.setOnClickListener(v -> finish());
         btnSend.setOnClickListener(v -> sendMessage());
     }
 
     private void initViews() {
-
         ((TextView) findViewById(R.id.tvChatName)).setText(friendName);
         etMessageInput = findViewById(R.id.etMessageInput);
         btnSend = findViewById(R.id.btnSend);
         btnBack = findViewById(R.id.btnBack);
+        tvChatStatus = findViewById(R.id.tvChatStatus);
 
         rvChatMessages = findViewById(R.id.rvChatMessages);
         var layoutManager = new LinearLayoutManager(this);

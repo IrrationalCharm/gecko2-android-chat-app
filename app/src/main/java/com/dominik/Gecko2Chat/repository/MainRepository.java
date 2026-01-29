@@ -12,26 +12,35 @@ import com.dominik.Gecko2Chat.database.entities.FriendEntity;
 import com.dominik.Gecko2Chat.database.dao.MessageDao;
 import com.dominik.Gecko2Chat.database.entities.FriendRequestEntity;
 import com.dominik.Gecko2Chat.database.entities.MessageEntity;
+import com.dominik.Gecko2Chat.enums.MessageType;
 import com.dominik.Gecko2Chat.model.User;
 import com.dominik.Gecko2Chat.model.api.ApiResponse;
 import com.dominik.Gecko2Chat.model.api.UserApi;
 import com.dominik.Gecko2Chat.model.response.MessageHistoryDto;
 import com.dominik.Gecko2Chat.model.response.StartupDto;
 import com.dominik.Gecko2Chat.model.websocket.FriendRequestDto;
+import com.dominik.Gecko2Chat.model.websocket.outgoing.ClientMessage;
+import com.dominik.Gecko2Chat.model.websocket.outgoing.SendDeliveredReceiptRequest;
 import com.dominik.Gecko2Chat.rest.RestClient;
 import com.dominik.Gecko2Chat.utils.ConversationUtils;
 import com.dominik.Gecko2Chat.utils.UserManager;
+import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.dominik.Gecko2Chat.utils.mapper.FriendMapper;
 import com.dominik.Gecko2Chat.utils.mapper.FriendRequestMapper;
 import com.dominik.Gecko2Chat.utils.mapper.UserMapper;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 import retrofit2.Response;
 
 public class MainRepository {
@@ -43,6 +52,8 @@ public class MainRepository {
     private final FriendDao friendDao;
     private final FriendRequestDao friendRequestDao;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private CompositeDisposable compositeDisposable;
+
 
 
 
@@ -50,10 +61,12 @@ public class MainRepository {
         userApi = RestClient.getInstance(context).getUserApi();
         AppDatabase db = AppDatabase.getInstance(context);
         userManager = UserManager.getInstance(context);
-
+        compositeDisposable = new CompositeDisposable();
         messageDao = db.messageDao();
         friendDao = db.friendDao();
         friendRequestDao = db.friendRequestDao();
+
+        monitorConnectionStatus();
     }
 
     public static MainRepository getInstance(Context context) {
@@ -102,6 +115,7 @@ public class MainRepository {
                     userManager.saveUser(user);
                 } else Log.e("MainRepository", "User data is null");
 
+                String myId = userManager.getUser().internalId();
 
                 //Sync conversations
                 if(data.conversationSummary() != null) {
@@ -112,6 +126,11 @@ public class MainRepository {
                                 .map(ConversationUtils::mapMessageDtoToMessageEntity)
                                 .collect(Collectors.toList());
                         messageDao.insertAll(messageEntities);
+
+                        messageEntities.stream()
+                                .filter(msg -> msg.recipientId.equals(myId)) //Filter by messages where im the recipient
+                                .max(Comparator.comparing(m -> m.timestamp)) //Compare each message and return the highest timestamp (last message received)
+                                .ifPresent(this::sendDeliveryReceipt); //Deliver it to the server, so that the other user can see (if online) that it was delivered. Otherwise it just updates the Conversation Table in message-persistence-service
                     }
                 } else Log.e("MainRepository", "Conversation summary is null");
 
@@ -126,7 +145,6 @@ public class MainRepository {
 
                     friendRequestDao.insertAll(friendRequestEntities);
                 }
-
                 Log.d("MainRepository", "Startup data refreshed");
 
             } catch (IOException e) {
@@ -134,8 +152,34 @@ public class MainRepository {
 
             }
         });
+    }
 
 
+    private void sendDeliveryReceipt(MessageEntity msg) {
+        ClientMessage delivered = new SendDeliveredReceiptRequest(
+                MessageType.DELIVERY_RECEIPT_CLIENT,
+                msg.recipientId, //Im the recipient of the incoming message but the sender of the delivered receipt
+                msg.senderId,
+                msg.messageId,
+                msg.conversationId,
+                msg.timestamp.toString()
+        );
+
+        WebSocketManager.getInstance().send(delivered);
+    }
+
+
+    private void monitorConnectionStatus() {
+        // 4. Update the LiveData
+        Disposable d = ( WebSocketManager.getInstance().getConnectionStatus()
+                        .filter(status -> status == WebSocketManager.ConnectionStatus.CONNECTED)
+                        // Avoid rapid firing if status flutters
+                        .subscribe(status -> {
+                            Log.d("MainRepository", "Connection restored, refreshing data...");
+                            refreshStartupData();
+                        }, Throwable::printStackTrace)
+        );
+        compositeDisposable.add(d);
     }
 
     public LiveData<List<FriendEntity>> getFriends() {

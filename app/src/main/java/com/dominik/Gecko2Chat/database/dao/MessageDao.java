@@ -26,6 +26,9 @@ public interface MessageDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertMessage(MessageEntity message);
 
+    @Query("UPDATE messages SET status = :newStatus WHERE conversationId = :conversationId AND senderId = :myId AND timestamp <= :timestamp AND status = 'SENT'")
+    void markMessagesAsDelivered(String conversationId, String myId, Instant timestamp, MessageStatus newStatus);
+
     @Query("UPDATE messages SET status = :status, timestamp = :timestamp WHERE messageId = :messageId")
     void updateStatusAndTimestamp(String messageId, MessageStatus status, Instant timestamp);
 

@@ -109,10 +109,11 @@ public class MessageRepository {
         executor.execute(() -> messageDao.updateStatusAndTimestamp(event.messageId(), MessageStatus.SENT, Instant.parse(event.timestamp())));
     }
 
-    //Confirmation by server that message was received by recipient
+    //Confirmation by server that message was delivered to recipient
     public void incomingMessageDelivered(MessageDeliveredEvent event) {
         Log.i("MessageRepository", "Message delivered by server received: " + event.messageId());
-        executor.execute(() -> messageDao.updateStatus(event.messageId(), MessageStatus.DELIVERED));
+        String conversationId = ConversationUtils.getConversationId(event.senderOfMessage(), event.recipientOfMessage());
+        executor.execute(() -> messageDao.markMessagesAsDelivered(conversationId, event.recipientOfMessage(), Instant.parse(event.timestamp()), MessageStatus.DELIVERED));
     }
 
     //Confirmation by server that message was read by recipient
@@ -198,7 +199,7 @@ public class MessageRepository {
     private void fetchAndInsertMessages(String friendId, Instant beforeTime) {
         long epoch = beforeTime.toEpochMilli();
 
-        messageApi.getConversation(friendId, epoch, 20).enqueue(new Callback<ApiResponse<MessageHistoryDto>>() {
+        messageApi.getConversation(friendId, epoch, 20).enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<ApiResponse<MessageHistoryDto>> call, @NonNull Response<ApiResponse<MessageHistoryDto>> response) {
                 if (response.isSuccessful() && response.body() != null) {

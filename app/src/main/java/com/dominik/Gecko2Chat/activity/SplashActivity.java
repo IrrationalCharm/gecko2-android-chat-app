@@ -15,6 +15,7 @@ import com.dominik.Gecko2Chat.activity.onBoarding.OnboardingActivity;
 import com.dominik.Gecko2Chat.utils.AuthStateManager;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.utils.UserManager;
+import com.dominik.Gecko2Chat.utils.WebSocketManager;
 
 import net.openid.appauth.AppAuthConfiguration;
 import net.openid.appauth.AuthState;
@@ -40,10 +41,6 @@ public class SplashActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.splash_activity);
-
-        //SharedPreferences prefs = getSharedPreferences("auth_prefs", MODE_PRIVATE);
-        //prefs.edit().clear().apply();
-
         init();
 
         handler.postDelayed(runnable, 1500);
@@ -70,7 +67,6 @@ public class SplashActivity extends AppCompatActivity {
     private void checkAuthAndNavigate() {
         AuthState state = authStateManager.getAuthState();
 
-        // 1. If not even logged in, go to Login
         if (!state.isAuthorized()) {
             navigateToLogin();
             return;
@@ -91,6 +87,7 @@ public class SplashActivity extends AppCompatActivity {
 
             // 3. Now check Onboarding status
             if (userManager.getUser().isOnboarded()) {
+                //WebSocketManager.getInstance().connect(this);
                 startActivity(new Intent(this, MainActivity.class));
             } else {
                 startActivity(new Intent(this, OnboardingActivity.class));

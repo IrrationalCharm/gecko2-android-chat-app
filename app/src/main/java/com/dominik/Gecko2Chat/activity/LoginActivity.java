@@ -22,6 +22,7 @@ import com.dominik.Gecko2Chat.activity.onBoarding.OnboardingActivity;
 import com.dominik.Gecko2Chat.repository.MainRepository;
 import com.dominik.Gecko2Chat.utils.AuthStateManager;
 import com.dominik.Gecko2Chat.utils.UserManager;
+import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.google.android.material.button.MaterialButton;
 
 import net.openid.appauth.AppAuthConfiguration;
@@ -105,7 +106,8 @@ public class LoginActivity extends AppCompatActivity {
                     userManager.saveUserFromIdToken(authStateManager.getAuthState().getIdToken());
 
                     if (userManager.getUser().isOnboarded()) {
-                        MainRepository.getInstance(this).refreshStartupData();
+                        WebSocketManager.getInstance().connect(this);
+                        //MainRepository.getInstance(this).refreshStartupData();
 
                         startActivity(new Intent(this, MainActivity.class));
                         finish();

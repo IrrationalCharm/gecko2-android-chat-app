@@ -82,7 +82,7 @@ public abstract class BaseConnectionFragment extends Fragment {
         //Hide Spinner, Show "Connected" in Green
         if (progressBar != null) progressBar.setVisibility(View.GONE);
         if (tvConnecting != null) {
-            tvConnecting.setText("Connected");
+            tvConnecting.setText(R.string.connected);
             tvConnecting.setTextColor(ContextCompat.getColor(requireContext(), R.color.green_accent));
         }
 
@@ -119,7 +119,7 @@ public abstract class BaseConnectionFragment extends Fragment {
         if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
 
         if (tvConnecting != null) {
-            tvConnecting.setText("Connecting...");
+            tvConnecting.setText(R.string.connecting);
             tvConnecting.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
         }
 
@@ -144,6 +144,10 @@ public abstract class BaseConnectionFragment extends Fragment {
 
     private void startShimmer() {
         if (tvConnecting == null) return;
+
+        if (shimmerAnimator != null && shimmerAnimator.isRunning()) {
+            return;
+        }
 
         tvConnecting.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
