@@ -10,8 +10,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.dominik.Gecko2Chat.database.AppDatabase;
 import com.dominik.Gecko2Chat.model.api.KeycloakApi;
-import com.dominik.Gecko2Chat.repository.MainRepository;
-import com.dominik.Gecko2Chat.repository.MessageRepository;
 import com.dominik.Gecko2Chat.utils.AuthStateManager;
 import com.dominik.Gecko2Chat.utils.UserManager;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
@@ -134,7 +132,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 
         if (refreshToken == null) return;
 
-        keycloakApi.revokeToken("gecko2-android-client", refreshToken, "refresh_token").enqueue(new Callback<Void>() {
+        keycloakApi.revokeToken("gecko2-android-client", refreshToken, "refresh_token").enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
                 if (response.isSuccessful()) {

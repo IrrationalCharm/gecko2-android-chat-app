@@ -27,7 +27,6 @@ public class MainActivity extends BaseActivity {
     private final Fragment profileFragment = new ProfileFragment();
     private TextView navContacts, navChats, tvProfileText;
     private MaterialCardView cvProfileImage;
-    private MainViewModel viewModel;
 
 
     @Override
@@ -38,7 +37,7 @@ public class MainActivity extends BaseActivity {
         initViews();
         initListeners();
 
-        viewModel = new ViewModelProvider(this).get(MainViewModel.class);
+        MainViewModel viewModel = new ViewModelProvider(this).get(MainViewModel.class);
 
         chatsFragment = new ChatsFragment(viewModel.getConnectionStatus().getValue());
         contactFragment = new ContactsFragment(viewModel.getConnectionStatus().getValue());
@@ -46,15 +45,6 @@ public class MainActivity extends BaseActivity {
         loadFragment(chatsFragment);
     }
 
-    private static void updateConnectionBanner(WebSocketManager.ConnectionStatus status) {
-        if (status == WebSocketManager.ConnectionStatus.CONNECTING) {
-            // Show "Connecting..." banner/spinner
-        } else if (status == WebSocketManager.ConnectionStatus.CONNECTED) {
-            // Hide banner
-        } else if (status == WebSocketManager.ConnectionStatus.ERROR) {
-            // Show "Connection Failed" message
-        }
-    }
 
     private void updateMenuUI(Tabs activeTab) {
         int colorGreen = ContextCompat.getColor(this, R.color.green_accent);

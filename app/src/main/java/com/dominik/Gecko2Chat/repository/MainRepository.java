@@ -1,7 +1,6 @@
 package com.dominik.Gecko2Chat.repository;
 
 import android.content.Context;
-import android.content.Intent;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;

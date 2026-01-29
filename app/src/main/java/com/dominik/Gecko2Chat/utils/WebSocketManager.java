@@ -137,9 +137,7 @@ public class WebSocketManager {
                             subscribeToPrivateMessages();
                             Disposable pingDisposable = Observable.timer(500, TimeUnit.MILLISECONDS)
                                     .observeOn(Schedulers.io())
-                                    .subscribe(aLong -> {
-                                        sendMessage(PING_SERVER, gson.toJson(PING_PAYLOAD));
-                                    });
+                                    .subscribe(aLong -> sendMessage(PING_SERVER, gson.toJson(PING_PAYLOAD)));
                             compositeDisposable.add(pingDisposable);
                             break;
 

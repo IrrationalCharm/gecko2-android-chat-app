@@ -49,11 +49,8 @@ public abstract class BaseConnectionFragment extends Fragment {
         tvConnecting = view.findViewById(R.id.tvConnecting);
         tvHeader = view.findViewById(R.id.tvHeader);
 
-        // 2. Init ViewModel
         viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
-
         viewModel.getConnectionStatus().observe(getViewLifecycleOwner(), status -> {
-            // 1. Ignore duplicate updates (e.g. receiving CONNECTED twice)
             if (status == WebSocketManager.ConnectionStatus.CONNECTED && lastStatus == WebSocketManager.ConnectionStatus.CONNECTED) {
                 showChatsImmediately();
                 return;
@@ -68,11 +65,9 @@ public abstract class BaseConnectionFragment extends Fragment {
                 if (status == WebSocketManager.ConnectionStatus.CONNECTED) {
                     handleConnectedState();
                     lastStatus = status;
-                    return;
                 } else {
                     handleConnectingState();
                     lastStatus = status;
-                    return;
                 }
             } else {
                 lastStatus = status;

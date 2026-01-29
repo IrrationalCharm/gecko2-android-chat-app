@@ -1,31 +1,17 @@
 package com.dominik.Gecko2Chat.activity.main_activity.fragments;
 
-import android.animation.ValueAnimator;
 import android.content.Intent;
-import android.graphics.LinearGradient;
-import android.graphics.Matrix;
-import android.graphics.Shader;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.os.Handler;
-import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.main_activity.adapter.ChatAdapter;
@@ -40,7 +26,6 @@ import java.util.List;
 
 public class ChatsFragment extends BaseConnectionFragment {
 
-    private RecyclerView recyclerView;
     private ChatAdapter adapter;
     private List<ChatModel> chatList;
 
@@ -54,7 +39,7 @@ public class ChatsFragment extends BaseConnectionFragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_chat_list, container, false);
-        recyclerView = view.findViewById(R.id.rvList);
+        RecyclerView recyclerView = view.findViewById(R.id.rvList);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         chatList = new ArrayList<>();
