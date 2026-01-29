@@ -77,16 +77,16 @@ public abstract class BaseConnectionFragment extends Fragment {
 
 
     private void handleConnectedState() {
-        // 1. Stop the shimmer effect
+        //Stop the shimmer effect
         stopShimmer();
-        // 2. Hide Spinner, Show "Connected" in Green
+        //Hide Spinner, Show "Connected" in Green
         if (progressBar != null) progressBar.setVisibility(View.GONE);
         if (tvConnecting != null) {
             tvConnecting.setText("Connected");
             tvConnecting.setTextColor(ContextCompat.getColor(requireContext(), R.color.green_accent));
         }
 
-        // 3. Wait 1.5 seconds, then show Chats
+        //Wait 1.5 seconds, then show Chats
         transitionRunnable = () -> {
             if (!isAdded()) return; // Safety check
 

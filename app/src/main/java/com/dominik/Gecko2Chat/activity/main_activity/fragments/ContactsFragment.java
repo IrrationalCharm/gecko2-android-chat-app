@@ -28,11 +28,8 @@ import java.util.List;
 
 public class ContactsFragment extends BaseConnectionFragment {
 
-    private final static String LAST_SEEN = "Last seen recently";
-    private RecyclerView recyclerView;
     private ContactAdapter adapter;
     private List<ContactModel> contactList;
-    private CardView btnAddContact;
     private CardView btnFriendRequests;
     private TextView tvRequestCount;
 
@@ -49,8 +46,8 @@ public class ContactsFragment extends BaseConnectionFragment {
         View view = inflater.inflate(R.layout.fragment_contacts, container, false);
 
         btnFriendRequests = view.findViewById(R.id.cvFriendRequests);
-        btnAddContact = view.findViewById(R.id.btnAddContact);
-        recyclerView = view.findViewById(R.id.rvContactList);
+        CardView btnAddContact = view.findViewById(R.id.btnAddContact);
+        RecyclerView recyclerView = view.findViewById(R.id.rvContactList);
         tvRequestCount = view.findViewById(R.id.tvRequestCount);
 
         btnAddContact.setOnClickListener(v -> {
