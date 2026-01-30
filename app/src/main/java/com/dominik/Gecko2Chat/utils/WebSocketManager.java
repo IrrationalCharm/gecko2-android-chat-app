@@ -1,7 +1,11 @@
 package com.dominik.Gecko2Chat.utils;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.util.Log;
 
 import com.dominik.Gecko2Chat.activity.LoginActivity;
@@ -33,6 +37,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.BehaviorSubject;
 import io.reactivex.subjects.PublishSubject;
+import okhttp3.OkHttpClient;
 import ua.naiksoftware.stomp.Stomp;
 import ua.naiksoftware.stomp.StompClient;
 import ua.naiksoftware.stomp.dto.StompHeader;
@@ -55,9 +60,12 @@ public class WebSocketManager {
     private static WebSocketManager instance;
     private StompClient stompClient;
     private final String WS_URL = "ws://10.0.2.2:8081/ws";
-    private CompositeDisposable compositeDisposable;
-    private Disposable lifecycleDisposable; //Specific disposable for the connection lifecycle to prevent duplicates
-    private Disposable reconnectDisposable; //Specific disposable for the reconnection timer
+
+    // Disposables bound to the specific connection session (topics, pings)
+    private final CompositeDisposable connectionDisposable = new CompositeDisposable();
+
+    private Disposable lifecycleDisposable; // Specific disposable for the connection lifecycle
+    private Disposable reconnectDisposable; // Specific disposable for the reconnection timer
 
     private final Gson gson = new GsonBuilder()
             .registerTypeAdapter(ServerMessage.class, new ServerMessageDeserializer())
@@ -65,13 +73,12 @@ public class WebSocketManager {
 
     private boolean isIntentionalDisconnect = false;
 
-    //A "live pipe" that emits data only to listeners watching right now
+    // A "live pipe" that emits data only to listeners watching right now
     private final PublishSubject<String> messageSubject = PublishSubject.create();
-    //A pipe that remembers the most recent value.
+    // A pipe that remembers the most recent value.
     private final BehaviorSubject<ConnectionStatus> statusSubject = BehaviorSubject.createDefault(ConnectionStatus.DISCONNECTED);
 
     private WebSocketManager() {
-        compositeDisposable = new CompositeDisposable();
     }
 
     public static synchronized WebSocketManager getInstance() {
@@ -130,15 +137,36 @@ public class WebSocketManager {
         });
     }
 
+    /**
+     * Cleans up previous connection artifacts to ensure a fresh start.
+     */
+    private void resetConnection() {
+        if (stompClient != null) {
+            Log.d("WS", "Resetting connection");
+            stompClient.disconnect();
+            stompClient = null;
+        }
+        connectionDisposable.clear(); // Clear old topic subscriptions and pings
+        if (lifecycleDisposable != null) {
+            lifecycleDisposable.dispose();
+            lifecycleDisposable = null;
+        }
+        if(reconnectDisposable != null) {
+            reconnectDisposable.dispose();
+            reconnectDisposable = null;
+        }
+    }
+
+
 
     private void startStompConnection(String accessToken, Context context) {
-        if(lifecycleDisposable != null) lifecycleDisposable.dispose();
-        if(reconnectDisposable != null) reconnectDisposable.dispose();
+        resetConnection();
 
         stompClient = Stomp.over(Stomp.ConnectionProvider.OKHTTP, WS_URL);
 
         List<StompHeader> headers = new ArrayList<>();
         headers.add(new StompHeader("Authorization", "Bearer " + accessToken));
+        stompClient.withServerHeartbeat(5000).withClientHeartbeat(5000);
 
         stompClient.connect(headers);
 
@@ -150,10 +178,12 @@ public class WebSocketManager {
                         case OPENED:
                             Log.d("WS", "Stomp connection opened");
                             subscribeToPrivateMessages();
+
+                            // Send manual PING after 500ms
                             Disposable pingDisposable = Observable.timer(500, TimeUnit.MILLISECONDS)
                                     .observeOn(Schedulers.io())
                                     .subscribe(aLong -> sendMessage(PING_SERVER, gson.toJson(PING_PAYLOAD)));
-                            compositeDisposable.add(pingDisposable);
+                            connectionDisposable.add(pingDisposable);
                             break;
 
                         case ERROR:
@@ -174,7 +204,6 @@ public class WebSocketManager {
                 });
     }
 
-
     private void scheduleReconnect(Context context) {
         if(reconnectDisposable != null && !reconnectDisposable.isDisposed()) { //Avoid duplicate reconnect attempts
             return;
@@ -188,16 +217,19 @@ public class WebSocketManager {
                 });
     }
 
+    public void disconnect() {
+        isIntentionalDisconnect = true; //Force stops the reconnection
 
-    public Observable<String> getMessageStream() {
-        return messageSubject;
+        resetConnection(); // Uses the shared reset logic
+
+        if (reconnectDisposable != null) reconnectDisposable.dispose();
+        if (authService != null) authService.dispose();
     }
 
-    public Observable<ConnectionStatus> getConnectionStatus() {
-        return statusSubject;
-    }
 
 
+    public Observable<String> getMessageStream() {return messageSubject;}
+    public Observable<ConnectionStatus> getConnectionStatus() {return statusSubject;}
 
     public void subscribeToPrivateMessages() {
         Disposable d = stompClient.topic("/user/private")
@@ -215,17 +247,18 @@ public class WebSocketManager {
 
                     messageSubject.onNext(topicMessage.getPayload()); // Emit the message to the "radio"
                 }, throwable -> Log.e("WS", "Subscribe error", throwable));
-        compositeDisposable.add(d);
+
+        connectionDisposable.add(d);
     }
 
-
     private void sendMessage(String destination, String jsonPayload) {
+        if (stompClient == null || !stompClient.isConnected()) return;
+
         Disposable d = stompClient.send(destination, jsonPayload)
                 .subscribeOn(Schedulers.io())
                 .subscribe(() -> Log.d("WS", "Message Sent"), t -> Log.e("WS", "Send error", t));
-        compositeDisposable.add(d);
+        connectionDisposable.add(d);
     }
-
 
     public void send(ClientMessage message) {
         String json = gson.toJson(message);
@@ -241,15 +274,6 @@ public class WebSocketManager {
     }
 
 
-    public void disconnect() {
-        isIntentionalDisconnect = true; //Force stops the reconnection
-
-        if (stompClient != null) stompClient.disconnect();
-        if (lifecycleDisposable != null) lifecycleDisposable.dispose();
-        if (reconnectDisposable != null) reconnectDisposable.dispose();
-        if (authService != null) authService.dispose();
-        if (compositeDisposable != null) compositeDisposable.clear();
-    }
 
 
     public enum ConnectionStatus {
