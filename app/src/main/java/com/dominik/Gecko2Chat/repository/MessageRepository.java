@@ -136,7 +136,7 @@ public class MessageRepository {
     public void incomingMessageRead(MessageReadEvent event) {
         Log.i("MessageRepository", "Message read by server received: " + event.messageId());
         String conversationId = ConversationUtils.getConversationId(event.senderOfMessage(), event.recipientOfMessage());
-        executor.execute(() -> messageDao.markMessagesAsDelivered(conversationId, event.recipientOfMessage(), Instant.parse(event.timestamp()), MessageStatus.READ));
+        executor.execute(() -> messageDao.markMessagesAsRead(conversationId, event.recipientOfMessage(), Instant.parse(event.timestamp()), MessageStatus.READ));
     }
 
 

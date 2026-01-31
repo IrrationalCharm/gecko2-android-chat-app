@@ -118,16 +118,19 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             switch (message.status()) {
                 case SENDING -> {
                     tvMessageTime.setVisibility(View.GONE);
+                    ivMessageStatus.clearColorFilter();
                     ivMessageStatus.setImageResource(R.drawable.ic_clock);
                 }
                 case SENT -> {
                     tvMessageTime.setVisibility(View.VISIBLE);
                     ivMessageStatus.setImageResource(R.drawable.ic_tick);
+                    ivMessageStatus.clearColorFilter();
                     tvMessageTime.setText(message.timestamp().toString());
                 }
                 case DELIVERED -> {
                     tvMessageTime.setVisibility(View.VISIBLE);
                     ivMessageStatus.setImageResource(R.drawable.ic_double_tick);
+                    ivMessageStatus.clearColorFilter();
                     tvMessageTime.setText(message.timestamp().toString());
                 }
                 case READ -> {
