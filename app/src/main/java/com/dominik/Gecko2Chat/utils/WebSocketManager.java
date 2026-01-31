@@ -87,6 +87,36 @@ public class WebSocketManager {
     }
 
 
+    public void connect(Context context) {
+        if (stompClient != null && stompClient.isConnected())
+            return;
+
+        initAuth(context);
+
+        statusSubject.onNext(ConnectionStatus.CONNECTING);
+        isIntentionalDisconnect = false;
+
+        AuthState state = authStateManager.getAuthState();
+        state.performActionWithFreshTokens(authService, (accessToken, idToken, ex) -> {
+            if (ex != null) {
+                Log.e("WS", "Token refresh failed: " + ex.getMessage());
+                statusSubject.onNext(ConnectionStatus.ERROR);
+
+                isIntentionalDisconnect = true;
+                disconnect();
+                statusSubject.onNext(ConnectionStatus.AUTH_ERROR);
+                return;
+            }
+
+            if (accessToken != null) {
+                Log.d("WS", "Token refresh successful");
+                authStateManager.updateAuthState(state);
+                startStompConnection(accessToken, context);
+            }
+        });
+    }
+
+
     private void initAuth(Context context) {
         //TODO remove this!
         ConnectionBuilder connectionBuilder = uri -> {
@@ -107,66 +137,17 @@ public class WebSocketManager {
     }
 
 
-    public void connect(Context context) {
-        initAuth(context);
-
-        if (stompClient != null && stompClient.isConnected()) {
-            return;
-        }
-
-        statusSubject.onNext(ConnectionStatus.CONNECTING);
-        isIntentionalDisconnect = false;
-
-        AuthState state = authStateManager.getAuthState();
-        state.performActionWithFreshTokens(authService, (accessToken, idToken, ex) -> {
-            if (ex != null) {
-                Log.e("WS", "Token refresh failed: " + ex.getMessage());
-                statusSubject.onNext(ConnectionStatus.ERROR);
-
-                Intent intent = new Intent(context, LoginActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(intent);
-                return;
-            }
-
-            if (accessToken != null) {
-                Log.d("WS", "Token refresh successful");
-                authStateManager.updateAuthState(state);
-                startStompConnection(accessToken, context);
-            }
-        });
-    }
-
-    /**
-     * Cleans up previous connection artifacts to ensure a fresh start.
-     */
-    private void resetConnection() {
-        if (stompClient != null) {
-            Log.d("WS", "Resetting connection");
-            stompClient.disconnect();
-            stompClient = null;
-        }
-        connectionDisposable.clear(); // Clear old topic subscriptions and pings
-        if (lifecycleDisposable != null) {
-            lifecycleDisposable.dispose();
-            lifecycleDisposable = null;
-        }
-        if(reconnectDisposable != null) {
-            reconnectDisposable.dispose();
-            reconnectDisposable = null;
-        }
-    }
-
-
-
     private void startStompConnection(String accessToken, Context context) {
+
+        if(stompClient != null && stompClient.isConnected())
+            return;
+
         resetConnection();
 
         stompClient = Stomp.over(Stomp.ConnectionProvider.OKHTTP, WS_URL);
 
         List<StompHeader> headers = new ArrayList<>();
         headers.add(new StompHeader("Authorization", "Bearer " + accessToken));
-        stompClient.withServerHeartbeat(5000).withClientHeartbeat(5000);
 
         stompClient.connect(headers);
 
@@ -178,7 +159,6 @@ public class WebSocketManager {
                         case OPENED:
                             Log.d("WS", "Stomp connection opened");
                             subscribeToPrivateMessages();
-
                             // Send manual PING after 500ms
                             Disposable pingDisposable = Observable.timer(500, TimeUnit.MILLISECONDS)
                                     .observeOn(Schedulers.io())
@@ -204,6 +184,31 @@ public class WebSocketManager {
                 });
     }
 
+
+
+    /**
+     * Cleans up previous connection artifacts to ensure a fresh start.
+     */
+    private void resetConnection() {
+        if (stompClient != null) {
+            Log.d("WS", "Resetting connection");
+            stompClient.disconnect();
+            stompClient = null;
+        }
+        connectionDisposable.clear(); // Clear old topic subscriptions and pings
+        if (lifecycleDisposable != null) {
+            lifecycleDisposable.dispose();
+            lifecycleDisposable = null;
+        }
+        if(reconnectDisposable != null) {
+            reconnectDisposable.dispose();
+            reconnectDisposable = null;
+        }
+    }
+
+
+
+
     private void scheduleReconnect(Context context) {
         if(reconnectDisposable != null && !reconnectDisposable.isDisposed()) { //Avoid duplicate reconnect attempts
             return;
@@ -224,6 +229,7 @@ public class WebSocketManager {
 
         if (reconnectDisposable != null) reconnectDisposable.dispose();
         if (authService != null) authService.dispose();
+        authService = null;
     }
 
 
@@ -252,7 +258,6 @@ public class WebSocketManager {
     }
 
     private void sendMessage(String destination, String jsonPayload) {
-        if (stompClient == null || !stompClient.isConnected()) return;
 
         Disposable d = stompClient.send(destination, jsonPayload)
                 .subscribeOn(Schedulers.io())
@@ -277,6 +282,6 @@ public class WebSocketManager {
 
 
     public enum ConnectionStatus {
-        CONNECTED, CONNECTING, DISCONNECTED, ERROR
+        CONNECTED, CONNECTING, DISCONNECTED, ERROR, AUTH_ERROR
     }
 }

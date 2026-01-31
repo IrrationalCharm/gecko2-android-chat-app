@@ -12,6 +12,7 @@ import com.dominik.Gecko2Chat.database.entities.FriendEntity;
 import com.dominik.Gecko2Chat.database.dao.MessageDao;
 import com.dominik.Gecko2Chat.database.entities.FriendRequestEntity;
 import com.dominik.Gecko2Chat.database.entities.MessageEntity;
+import com.dominik.Gecko2Chat.enums.MessageStatus;
 import com.dominik.Gecko2Chat.enums.MessageType;
 import com.dominik.Gecko2Chat.model.User;
 import com.dominik.Gecko2Chat.model.api.ApiResponse;
@@ -37,10 +38,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
 import retrofit2.Response;
 
 public class MainRepository {
@@ -119,18 +118,25 @@ public class MainRepository {
 
                 //Sync conversations
                 if(data.conversationSummary() != null) {
-                    List<MessageHistoryDto> messages = data.conversationSummary();
+                    List<MessageHistoryDto> conversations = data.conversationSummary();
 
-                    for (MessageHistoryDto dto : messages) {
+                    for (MessageHistoryDto dto : conversations) {
                         List<MessageEntity> messageEntities = dto.messages().stream()
                                 .map(ConversationUtils::mapMessageDtoToMessageEntity)
                                 .collect(Collectors.toList());
-                        messageDao.insertAll(messageEntities);
 
-                        messageEntities.stream()
-                                .filter(msg -> msg.recipientId.equals(myId)) //Filter by messages where im the recipient
-                                .max(Comparator.comparing(m -> m.timestamp)) //Compare each message and return the highest timestamp (last message received)
-                                .ifPresent(this::sendDeliveryReceipt); //Deliver it to the server, so that the other user can see (if online) that it was delivered. Otherwise it just updates the Conversation Table in message-persistence-service
+                        if (!messageEntities.isEmpty()) {
+                            messageDao.insertAll(messageEntities);
+
+                            messageEntities.stream()
+                                    .filter(msg -> msg.recipientId.equals(myId)) //Filter by messages where im the recipient
+                                    .max(Comparator.comparing(m -> m.timestamp)) //Compare each message and return the highest timestamp (last message received)
+                                    .ifPresent(this::sendDeliveryReceipt); //Deliver it to the server, so that the other user can see (if online) that it was deliveredTimestamp. Otherwise it just updates the Conversation Table in message-persistence-service
+                        }
+
+                        messageDao.markMessagesAsDelivered(dto.conversationId(), myId, dto.lastDeliveredMessage(), MessageStatus.DELIVERED);
+
+
                     }
                 } else Log.e("MainRepository", "Conversation summary is null");
 
@@ -158,7 +164,7 @@ public class MainRepository {
     private void sendDeliveryReceipt(MessageEntity msg) {
         ClientMessage delivered = new SendDeliveredReceiptRequest(
                 MessageType.DELIVERY_RECEIPT_CLIENT,
-                msg.recipientId, //Im the recipient of the incoming message but the sender of the delivered receipt
+                msg.recipientId, //Im the recipient of the incoming message but the sender of the deliveredTimestamp receipt
                 msg.senderId,
                 msg.messageId,
                 msg.conversationId,

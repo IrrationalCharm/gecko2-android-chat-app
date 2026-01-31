@@ -19,6 +19,8 @@ import androidx.core.content.ContextCompat;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.main_activity.MainActivity;
 import com.dominik.Gecko2Chat.activity.onBoarding.OnboardingActivity;
+import com.dominik.Gecko2Chat.database.AppDatabase;
+import com.dominik.Gecko2Chat.model.User;
 import com.dominik.Gecko2Chat.repository.MainRepository;
 import com.dominik.Gecko2Chat.utils.AuthStateManager;
 import com.dominik.Gecko2Chat.utils.UserManager;
@@ -36,6 +38,8 @@ import net.openid.appauth.connectivity.ConnectionBuilder;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -103,9 +107,16 @@ public class LoginActivity extends AppCompatActivity {
 
                     Toast.makeText(this, "Login Successful", Toast.LENGTH_SHORT).show();
                     var userManager = UserManager.getInstance(this);
-                    userManager.saveUserFromIdToken(authStateManager.getAuthState().getIdToken());
+                    userManager.clearUser();
 
-                    if (userManager.getUser().isOnboarded()) {
+                    try( ExecutorService executor = Executors.newSingleThreadExecutor() ) {
+                        executor.execute(() -> AppDatabase.getInstance(this).clearAllTables());
+                    }
+
+                    userManager.saveUserFromIdToken(authStateManager.getAuthState().getIdToken());
+                    User user = userManager.getUser();
+
+                    if (user.isOnboarded()) {
                         WebSocketManager.getInstance().connect(this);
                         //MainRepository.getInstance(this).refreshStartupData();
 
@@ -113,7 +124,7 @@ public class LoginActivity extends AppCompatActivity {
                         finish();
                     }
 
-                    if (!userManager.getUser().isOnboarded()) {
+                    if (!user.isOnboarded()) {
                         startActivity(new Intent(this, OnboardingActivity.class));
                         finish();
                     }

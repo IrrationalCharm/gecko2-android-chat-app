@@ -1,5 +1,6 @@
 package com.dominik.Gecko2Chat.model.response;
 
+import java.time.Instant;
 import java.util.List;
 
 
@@ -14,6 +15,9 @@ import java.util.List;
 public record MessageHistoryDto(
         String conversationId,
         List<MessageDto> messages,
+
+        Instant lastDeliveredMessage,  //The other user of the requester
+        Instant lastReadMessage,        //The other user of the requester
 
         int pageNumber,
         int totalPages,

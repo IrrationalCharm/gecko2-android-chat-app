@@ -24,21 +24,12 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private final List<MessageModel> messageList;
     private final String currentUserId;
 
+
     public MessageAdapter( String currentUserId) {
         this.messageList = new ArrayList<>();
         this.currentUserId = currentUserId;
     }
 
-    // Logic to update list properly
-    public void addMessage(MessageModel message) {
-        messageList.add(message);
-        notifyItemInserted(messageList.size() - 1);
-    }
-
-    public void addMessages(List<MessageModel> messages) {
-        messageList.addAll(messages);
-        notifyItemInserted(messageList.size() - messages.size());
-    }
 
     public void setMessages(List<MessageModel> newMessages) {
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {

@@ -24,12 +24,17 @@ import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 
 public abstract class BaseActivity extends AppCompatActivity {
+
+    private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     private AuthorizationService authService;
     protected AuthStateManager authStateManager;
@@ -48,6 +53,16 @@ public abstract class BaseActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         checkAuthAndConnect();
+
+        Disposable d = WebSocketManager.getInstance().getConnectionStatus()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(status -> {
+                    if(status == WebSocketManager.ConnectionStatus.AUTH_ERROR) {
+                        performLogout();
+                    }
+                });
+
+        compositeDisposable.add(d);
     }
 
 
@@ -57,6 +72,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         if (authService != null) {
             authService.dispose();
         }
+        compositeDisposable.dispose();
     }
 
 
@@ -113,7 +129,6 @@ public abstract class BaseActivity extends AppCompatActivity {
         }
 
         Intent intent = new Intent(this, LoginActivity.class);
-        //Avoid user pressing back
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();

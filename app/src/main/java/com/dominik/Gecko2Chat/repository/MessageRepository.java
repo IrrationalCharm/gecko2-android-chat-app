@@ -25,6 +25,7 @@ import com.dominik.Gecko2Chat.model.websocket.adapter.ServerMessageDeserializer;
 import com.dominik.Gecko2Chat.model.websocket.outgoing.ClientMessage;
 import com.dominik.Gecko2Chat.model.websocket.outgoing.SendDeliveredReceiptRequest;
 import com.dominik.Gecko2Chat.model.websocket.outgoing.SendMessageRequest;
+import com.dominik.Gecko2Chat.model.websocket.outgoing.SendReadReceiptRequest;
 import com.dominik.Gecko2Chat.rest.RestClient;
 import com.dominik.Gecko2Chat.utils.ConversationUtils;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
@@ -47,9 +48,6 @@ public class MessageRepository {
 
     private static MessageRepository instance;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final Gson gson = new GsonBuilder()
-            .registerTypeAdapter(ServerMessage.class, new ServerMessageDeserializer())
-            .create();
     private final MessageApi messageApi;
     private final MessageDao messageDao;
     private String currentConversationId = null;
@@ -68,38 +66,56 @@ public class MessageRepository {
     }
 
 
-    public void incomingMessage(ChatMessageEvent dto) {
-        Log.i("MessageRepository", "Message received: " + dto.content());
+    //Incoming messages from websocket
+    public void incomingMessage(ChatMessageEvent event) {
+        String eventConversationId = ConversationUtils.getConversationId(event.senderId(), event.recipientId());
+        MessageStatus status;
+
+        if(currentConversationId != null && currentConversationId.equals(eventConversationId)) {
+            Log.d("MessageRepository", "Message from current conversation received");
+            status = MessageStatus.READ;
+        } else {
+            Log.d("MessageRepository", "Message from another conversation received");
+            status = MessageStatus.DELIVERED;
+            //TODO emit notification
+        }
+
         var mEntity = new MessageEntity();
-        mEntity.messageId = dto.clientMsgId();
-        mEntity.conversationId = ConversationUtils.getConversationId(dto.senderId(), dto.recipientId());
-        mEntity.senderId = dto.senderId();
-        mEntity.recipientId = dto.recipientId();
-        mEntity.content = dto.content();
-        mEntity.timestamp = Instant.parse(dto.timestamp());
-        mEntity.type = dto.textType().toString();
+        mEntity.messageId = event.clientMsgId();
+        mEntity.conversationId = eventConversationId;
+        mEntity.senderId = event.senderId();
+        mEntity.recipientId = event.recipientId();
+        mEntity.content = event.content();
+        mEntity.status = status;
+        mEntity.timestamp = Instant.parse(event.timestamp());
+        mEntity.type = event.textType().toString();
 
         executor.execute(() -> {
             messageDao.insertMessage(mEntity);
 
-            ClientMessage delivered = new SendDeliveredReceiptRequest(
-                    MessageType.DELIVERY_RECEIPT_CLIENT,
-                    mEntity.recipientId, //Im the recipient of the incoming message but the sender of the delivered receipt
-                    mEntity.senderId,
-                    mEntity.messageId,
-                    mEntity.conversationId,
-                    mEntity.timestamp.toString()
-                    );
+            ClientMessage messageStatus;
 
-            WebSocketManager.getInstance().send(delivered);
+            //If the user is in the same chat, mark message status as read, otherwise mark as delivered
+            if (status == MessageStatus.READ) {
+                messageStatus = new SendReadReceiptRequest(
+                        MessageType.READ_RECEIPT_CLIENT,
+                        mEntity.recipientId, //The current user who just read the new message
+                        mEntity.senderId, //who will receive the event that the message is read
+                        mEntity.messageId,
+                        mEntity.conversationId,
+                        Instant.now().toString());
+            } else {
+                messageStatus = new SendDeliveredReceiptRequest(
+                        MessageType.DELIVERY_RECEIPT_CLIENT,
+                        mEntity.recipientId, //Im the recipient of the incoming message but the sender of the deliveredTimestamp receipt
+                        mEntity.senderId, //who will receive the notification that the message is deliveredTimestamp
+                        mEntity.messageId,
+                        mEntity.conversationId,
+                        mEntity.timestamp.toString());
+            }
+
+            WebSocketManager.getInstance().send(messageStatus);
         });
-
-        // Emit notification if its not the current conversation
-        if (currentConversationId != null && !currentConversationId.equals(mEntity.conversationId)) {
-            Log.i("MessageRepository", "Message from another conversation received");
-            //TODO emit notification
-            //NotificationUtils.showNewMessageNotification(context, mEntity);
-        }
     }
 
 
@@ -109,9 +125,9 @@ public class MessageRepository {
         executor.execute(() -> messageDao.updateStatusAndTimestamp(event.messageId(), MessageStatus.SENT, Instant.parse(event.timestamp())));
     }
 
-    //Confirmation by server that message was delivered to recipient
+    //Confirmation by server that message was deliveredTimestamp to recipient
     public void incomingMessageDelivered(MessageDeliveredEvent event) {
-        Log.i("MessageRepository", "Message delivered by server received: " + event.messageId());
+        Log.i("MessageRepository", "Message deliveredTimestamp by server received: " + event.messageId());
         String conversationId = ConversationUtils.getConversationId(event.senderOfMessage(), event.recipientOfMessage());
         executor.execute(() -> messageDao.markMessagesAsDelivered(conversationId, event.recipientOfMessage(), Instant.parse(event.timestamp()), MessageStatus.DELIVERED));
     }
@@ -119,7 +135,8 @@ public class MessageRepository {
     //Confirmation by server that message was read by recipient
     public void incomingMessageRead(MessageReadEvent event) {
         Log.i("MessageRepository", "Message read by server received: " + event.messageId());
-        executor.execute(() -> messageDao.updateStatus(event.messageId(), MessageStatus.READ));
+        String conversationId = ConversationUtils.getConversationId(event.senderOfMessage(), event.recipientOfMessage());
+        executor.execute(() -> messageDao.markMessagesAsDelivered(conversationId, event.recipientOfMessage(), Instant.parse(event.timestamp()), MessageStatus.READ));
     }
 
 
