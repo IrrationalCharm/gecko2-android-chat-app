@@ -6,7 +6,6 @@ public record SendReadReceiptRequest(
         MessageType type,
         String senderId, //Sender of request
         String recipientId, //Recipient of request
-        String messageId,
         String conversationId,
         String readTimestamp
 

@@ -29,13 +29,13 @@ public interface MessageDao {
     @Query("UPDATE messages SET status = :newStatus WHERE conversationId = :conversationId AND senderId = :myId AND timestamp <= :timestamp AND status = 'SENT'")
     void markMessagesAsDelivered(String conversationId, String myId, Instant timestamp, MessageStatus newStatus);
 
+    @Query("UPDATE messages SET status = 'READ' WHERE conversationId = :conversationId AND senderId = :senderUserId AND status = 'DELIVERED'")
+    void markAllMessagesAsRead(String conversationId, String senderUserId);
+
     @Query("UPDATE messages SET status = :newStatus WHERE conversationId = :conversationId AND senderId = :myId AND timestamp <= :timestamp AND (status = 'SENT' OR status = 'DELIVERED')")
     void markMessagesAsRead(String conversationId, String myId, Instant timestamp, MessageStatus newStatus);
     @Query("UPDATE messages SET status = :status, timestamp = :timestamp WHERE messageId = :messageId")
     void updateStatusAndTimestamp(String messageId, MessageStatus status, Instant timestamp);
-
-    @Query("UPDATE messages SET status = :status WHERE messageId = :messageId")
-    void updateStatus(String messageId, MessageStatus status);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<MessageEntity> messages);
@@ -52,4 +52,7 @@ public interface MessageDao {
     //Get last message stored in Room
     @Query("SELECT MAX(timestamp) FROM messages")
     Instant getLatestTimestamp();
+
+    @Query("SELECT COUNT(*) FROM messages WHERE conversationId = :conversationId AND senderId = :senderUserId AND status = 'DELIVERED'")
+    int numberOfMessagesDelivered(String conversationId, String senderUserId);
 }

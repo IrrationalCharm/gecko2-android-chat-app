@@ -51,9 +51,7 @@ public class MainRepository {
     private final FriendDao friendDao;
     private final FriendRequestDao friendRequestDao;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private CompositeDisposable compositeDisposable;
-
-
+    private final CompositeDisposable compositeDisposable;
 
 
     private MainRepository(Context context) {
@@ -114,18 +112,24 @@ public class MainRepository {
                     userManager.saveUser(user);
                 } else Log.e("MainRepository", "User data is null");
 
-                String myId = userManager.getUser().internalId();
 
                 //Sync conversations
+                String myId = userManager.getUser().internalId();
                 if(data.conversationSummary() != null) {
                     List<MessageHistoryDto> conversations = data.conversationSummary();
 
-                    for (MessageHistoryDto dto : conversations) {
-                        List<MessageEntity> messageEntities = dto.messages().stream()
+                    for (MessageHistoryDto conv : conversations) {
+                        List<MessageEntity> messageEntities = conv.messages().stream()
                                 .map(ConversationUtils::mapMessageDtoToMessageEntity)
                                 .collect(Collectors.toList());
 
                         if (!messageEntities.isEmpty()) {
+                            //Update messages that current user received but are marked as sent. and change them to delivered
+                            for(MessageEntity msg : messageEntities) {
+                                if(msg.recipientId.equals(myId) && msg.status == MessageStatus.SENT) {
+                                    msg.status = MessageStatus.DELIVERED;
+                                }
+                            }
                             messageDao.insertAll(messageEntities);
 
                             messageEntities.stream()
@@ -134,7 +138,7 @@ public class MainRepository {
                                     .ifPresent(this::sendDeliveryReceipt); //Deliver it to the server, so that the other user can see (if online) that it was deliveredTimestamp. Otherwise it just updates the Conversation Table in message-persistence-service
                         }
 
-                        messageDao.markMessagesAsDelivered(dto.conversationId(), myId, dto.lastDeliveredMessage(), MessageStatus.DELIVERED);
+                        messageDao.markMessagesAsDelivered(conv.conversationId(), myId, conv.lastDeliveredMessage(), MessageStatus.DELIVERED);
 
 
                     }

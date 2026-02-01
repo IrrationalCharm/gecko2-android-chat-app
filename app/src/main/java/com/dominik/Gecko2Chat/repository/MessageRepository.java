@@ -20,8 +20,6 @@ import com.dominik.Gecko2Chat.model.websocket.incoming.ChatMessageEvent;
 import com.dominik.Gecko2Chat.model.websocket.incoming.MessageDeliveredEvent;
 import com.dominik.Gecko2Chat.model.websocket.incoming.MessageReadEvent;
 import com.dominik.Gecko2Chat.model.websocket.incoming.MessageSentEvent;
-import com.dominik.Gecko2Chat.model.websocket.incoming.ServerMessage;
-import com.dominik.Gecko2Chat.model.websocket.adapter.ServerMessageDeserializer;
 import com.dominik.Gecko2Chat.model.websocket.outgoing.ClientMessage;
 import com.dominik.Gecko2Chat.model.websocket.outgoing.SendDeliveredReceiptRequest;
 import com.dominik.Gecko2Chat.model.websocket.outgoing.SendMessageRequest;
@@ -29,10 +27,7 @@ import com.dominik.Gecko2Chat.model.websocket.outgoing.SendReadReceiptRequest;
 import com.dominik.Gecko2Chat.rest.RestClient;
 import com.dominik.Gecko2Chat.utils.ConversationUtils;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -68,21 +63,14 @@ public class MessageRepository {
 
     //Incoming messages from websocket
     public void incomingMessage(ChatMessageEvent event) {
-        String eventConversationId = ConversationUtils.getConversationId(event.senderId(), event.recipientId());
-        MessageStatus status;
+        String conversationId = ConversationUtils.getConversationId(event.senderId(), event.recipientId());
 
-        if(currentConversationId != null && currentConversationId.equals(eventConversationId)) {
-            Log.d("MessageRepository", "Message from current conversation received");
-            status = MessageStatus.READ;
-        } else {
-            Log.d("MessageRepository", "Message from another conversation received");
-            status = MessageStatus.DELIVERED;
-            //TODO emit notification
-        }
+        boolean isChatOpen = conversationId.equals(this.currentConversationId);
+        MessageStatus status = isChatOpen ? MessageStatus.READ : MessageStatus.DELIVERED;
 
         var mEntity = new MessageEntity();
         mEntity.messageId = event.clientMsgId();
-        mEntity.conversationId = eventConversationId;
+        mEntity.conversationId = conversationId;
         mEntity.senderId = event.senderId();
         mEntity.recipientId = event.recipientId();
         mEntity.content = event.content();
@@ -101,7 +89,6 @@ public class MessageRepository {
                         MessageType.READ_RECEIPT_CLIENT,
                         mEntity.recipientId, //The current user who just read the new message
                         mEntity.senderId, //who will receive the event that the message is read
-                        mEntity.messageId,
                         mEntity.conversationId,
                         Instant.now().toString());
             } else {
@@ -127,54 +114,39 @@ public class MessageRepository {
 
     //Confirmation by server that message was deliveredTimestamp to recipient
     public void incomingMessageDelivered(MessageDeliveredEvent event) {
-        Log.i("MessageRepository", "Message deliveredTimestamp by server received: " + event.messageId());
+        Log.i("MessageRepository", "Message deliveredTimestamp by server received");
         String conversationId = ConversationUtils.getConversationId(event.senderOfMessage(), event.recipientOfMessage());
         executor.execute(() -> messageDao.markMessagesAsDelivered(conversationId, event.recipientOfMessage(), Instant.parse(event.timestamp()), MessageStatus.DELIVERED));
     }
 
     //Confirmation by server that message was read by recipient
     public void incomingMessageRead(MessageReadEvent event) {
-        Log.i("MessageRepository", "Message read by server received: " + event.messageId());
+        Log.d("MessageRepository", "Message read by server received");
         String conversationId = ConversationUtils.getConversationId(event.senderOfMessage(), event.recipientOfMessage());
         executor.execute(() -> messageDao.markMessagesAsRead(conversationId, event.recipientOfMessage(), Instant.parse(event.timestamp()), MessageStatus.READ));
     }
 
 
+    /**
+     *When user just opened chat, determine if it is marked as read and notify friend
+     */
+    public void markConversationAsRead(String currentUserId, String friendId) {
+        executor.execute(()-> {
+            int numberOfMessagesOnDelivered = messageDao.numberOfMessagesDelivered(currentConversationId, friendId);
 
-    public void performDeltaSync() {
-        executor.execute(() -> { //Room cannot be executed in main thread
-            Instant latestTimestamp = messageDao.getLatestTimestamp();
-            long timestampEpoch = latestTimestamp == null ? 0 : latestTimestamp.toEpochMilli();
-            Log.i("MessageRepository", "Performing delta sync with timestamp: " + timestampEpoch);
+            if(numberOfMessagesOnDelivered == 0) return;
 
-            try {
-                //Cannot use .enqueue() because the callback is executed in the main thread, and we need to execute it in a background thread to store the result in Room
-                Response<ApiResponse<List<MessageHistoryDto>>> response = messageApi.getSyncConversation(timestampEpoch).execute();
+            messageDao.markAllMessagesAsRead(currentConversationId, friendId);
 
-                if(!response.isSuccessful() || response.body() == null) {
-                    Log.e("MessageRepository", "Error performing delta sync: " + response.code());
-                    return;
-                }
+            var request = new SendReadReceiptRequest(
+                    MessageType.READ_RECEIPT_CLIENT,
+                    currentUserId, //The current user who just read the new message
+                    friendId, //who will receive the event that the message is read
+                    currentConversationId,
+                    Instant.now().toString());
 
-                List<MessageHistoryDto> messages = response.body().data();
-
-                for (MessageHistoryDto dto : messages) {
-
-                    List<MessageEntity> messageEntities = dto.messages().stream()
-                            .map(ConversationUtils::mapMessageDtoToMessageEntity)
-                            .collect(Collectors.toList());
-                    messageDao.insertAll(messageEntities);
-                }
-
-                Log.i("MessageRepository", "Delta sync successful");
-
-            } catch (IOException e) {
-                Log.e("MessageRepository", "Error performing delta sync", e);
-                throw new RuntimeException(e);
-            }
-
+            WebSocketManager.getInstance().send(request);
         });
-
     }
 
 
@@ -199,6 +171,7 @@ public class MessageRepository {
 
     }
 
+
     public void loadMoreHistory(String friendId, Instant oldestTimestamp) {
         executor.execute(() -> {
             boolean hasLocalHistory = messageDao.hasMessagesBefore(currentConversationId, oldestTimestamp);
@@ -212,6 +185,7 @@ public class MessageRepository {
             fetchAndInsertMessages(friendId, oldestTimestamp);
         });
     }
+
 
     private void fetchAndInsertMessages(String friendId, Instant beforeTime) {
         long epoch = beforeTime.toEpochMilli();

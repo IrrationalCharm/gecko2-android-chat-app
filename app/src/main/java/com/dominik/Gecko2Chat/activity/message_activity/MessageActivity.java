@@ -48,7 +48,16 @@ public class MessageActivity extends BaseActivity {
         messageViewModel = new ViewModelProvider(this).get(MessageViewModel.class);
         messageViewModel.initChat(friendId);
 
+        setupObservers();
+        setupPaginationListener();
 
+        if (adapter.getItemCount() == 0)
+            messageViewModel.loadNextPage(friendId);
+
+    }
+
+
+    private void setupObservers() {
         //Populates recycle view of messages
         messageViewModel.getMessageList().observe(this, messages -> {
             int oldSize = adapter.getItemCount();
@@ -73,21 +82,15 @@ public class MessageActivity extends BaseActivity {
         //Monitor connection status
         messageViewModel.getConnectionStatus().observe(this, status -> {
             if (status == WebSocketManager.ConnectionStatus.CONNECTED) {
-                tvChatStatus.setText("Online"); //TODO make this dependent on user activity
+                tvChatStatus.setText(R.string.online); //TODO make this dependent on user activity
             } else {
-                tvChatStatus.setText("Waiting for network...");
+                tvChatStatus.setText(R.string.waiting_for_network);
             }
         });
-
-        setupPaginationListener();
-
-        if (adapter.getItemCount() == 0)
-            messageViewModel.loadNextPage(friendId);
-
     }
 
 
-
+    //If user scrolls up, it loads next page
     private void setupPaginationListener() {
         rvChatMessages.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -112,9 +115,8 @@ public class MessageActivity extends BaseActivity {
         LinearLayoutManager layoutManager = (LinearLayoutManager) rvChatMessages.getLayoutManager();
         int pos = layoutManager.findLastCompletelyVisibleItemPosition();
         int numItems = rvChatMessages.getAdapter().getItemCount();
-        return (pos >= numItems - 2);
+        return (pos >= numItems ); //-1
     }
-
 
 
     private void initListeners() {
@@ -141,7 +143,7 @@ public class MessageActivity extends BaseActivity {
 
 
     private void sendMessage() {
-        String content = etMessageInput.getText().toString();
+        String content = etMessageInput.getText().toString().trim();
         if (content.isEmpty()) return;
 
         //TODO sanitize input

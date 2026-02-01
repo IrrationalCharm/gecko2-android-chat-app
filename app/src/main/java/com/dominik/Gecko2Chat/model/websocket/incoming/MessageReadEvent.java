@@ -4,7 +4,6 @@ import com.dominik.Gecko2Chat.enums.MessageType;
 
 public record MessageReadEvent(
         MessageType type,
-        String messageId,
         String senderOfMessage,
         String recipientOfMessage,
         String timestamp
