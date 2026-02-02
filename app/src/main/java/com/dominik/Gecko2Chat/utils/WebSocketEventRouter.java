@@ -44,7 +44,7 @@ public class WebSocketEventRouter {
         subscribeToWebsocket();
     }
 
-    public static WebSocketEventRouter getInstance(Context context) {
+    public static synchronized WebSocketEventRouter getInstance(Context context) {
         if(instance == null) {
             instance = new WebSocketEventRouter(context);
             return instance;

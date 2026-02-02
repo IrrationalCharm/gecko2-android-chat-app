@@ -39,7 +39,7 @@ public class FriendRequestRepository {
     private static FriendRequestRepository instance;
     private final UserManager userManager;
 
-    public interface RepositoryCallback<T> {
+    public interface RepositoryCallback {
         void onSuccess();
         void onError(ErrorCode message);
     }
@@ -50,7 +50,7 @@ public class FriendRequestRepository {
         friendshipApi = RestClient.getInstance(context).getFriendshipApi();
     }
 
-    public static FriendRequestRepository getInstance(Context context) {
+    public static synchronized FriendRequestRepository getInstance(Context context) {
         if (instance == null) {
             instance = new FriendRequestRepository(context);
         }
@@ -152,7 +152,7 @@ public class FriendRequestRepository {
     }
 
 
-    public void sendFriendRequest(String username, RepositoryCallback<Void> callback) {
+    public void sendFriendRequest(String username, RepositoryCallback callback) {
         friendshipApi.sendFriendRequest(username).enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<ApiResponse<Void>> call, @NonNull Response<ApiResponse<Void>> response) {

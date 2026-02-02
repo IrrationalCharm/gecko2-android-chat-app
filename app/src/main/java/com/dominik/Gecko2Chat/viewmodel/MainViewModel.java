@@ -11,8 +11,8 @@ import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
 
+import com.dominik.Gecko2Chat.database.entities.ConversationEntity;
 import com.dominik.Gecko2Chat.database.entities.FriendEntity;
-import com.dominik.Gecko2Chat.database.entities.MessageEntity;
 import com.dominik.Gecko2Chat.model.ChatModel;
 import com.dominik.Gecko2Chat.model.ContactModel;
 import com.dominik.Gecko2Chat.model.User;
@@ -63,11 +63,11 @@ public class MainViewModel extends AndroidViewModel {
         monitorUserPreferences();
 
         LiveData<List<FriendEntity>> friendsList = mainRepository.getFriends();
-        LiveData<List<MessageEntity>> recentMessageEntities = messageRepository.getRecentChats();
+        LiveData<List<ConversationEntity>> conversationsList = messageRepository.getConversations();
 
         //Listens to changes in friends and messages db, and runs updateChatList if any change event is triggered
-        chatList.addSource(friendsList, friends -> updateChatList(recentMessageEntities.getValue(), friendsList.getValue()));
-        chatList.addSource(recentMessageEntities, chats -> updateChatList(recentMessageEntities.getValue(), friendsList.getValue()));
+        chatList.addSource(friendsList, friends -> updateChatList(conversationsList.getValue(), friendsList.getValue()));
+        chatList.addSource(conversationsList, chats -> updateChatList(conversationsList.getValue(), friendsList.getValue()));
 
         contactList = Transformations.map(friendsList, entities -> entities.stream()
                 .map(entity -> new ContactModel(entity.internalId, entity.username, entity.displayName, "Recently online", entity.profileImageUrl))
@@ -93,24 +93,21 @@ public class MainViewModel extends AndroidViewModel {
         currentUser.setValue(user);
     }
 
-    private void updateChatList(List<MessageEntity> chats, List<FriendEntity> friends) {
+    private void updateChatList(List<ConversationEntity> chats, List<FriendEntity> friends) {
         if (chats == null || chats.isEmpty()) return;
         if (friends == null || friends.isEmpty()) return;
 
         List<ChatModel> currentList = chatList.getValue();
         if (currentList == null) currentList = new ArrayList<>();
 
-        // Create a copy to modify (Good practice for DiffUtil later)
+        // Create a copy to modify good practice for DiffUtil later
         List<ChatModel> newUiList = new ArrayList<>(currentList);
 
-        String currentUserId = userManager.getUser().internalId();
-
-        for (MessageEntity msg : chats) {
-            String otherUserId = msg.senderId.equals(currentUserId) ? msg.recipientId : msg.senderId;
-
+        for (ConversationEntity conv : chats) {
             // Find friend details from the cached list
             String name = "Unknown";
             String avatar = null;
+            String otherUserId = conv.otherUserId;
 
             for (FriendEntity f : friends) {
                 if (f.internalId.equals(otherUserId)) {
@@ -123,7 +120,7 @@ public class MainViewModel extends AndroidViewModel {
 
             newUiList.removeIf(chatModel -> chatModel.friendId().equals(otherUserId));
 
-            newUiList.add(new ChatModel(name, otherUserId, msg.content, msg.timestamp.toString(), avatar));
+            newUiList.add(new ChatModel(name, otherUserId, conv.lastMessageContent, conv.unreadCount,conv.lastMessageTimestamp.toString(), avatar));
         }
 
         chatList.setValue(newUiList);
@@ -145,7 +142,6 @@ public class MainViewModel extends AndroidViewModel {
 
         compositeDisposable.add(d);
     }
-
 
     public LiveData<List<ChatModel>> getChatList() { return chatList; }
     public LiveData<Integer> getFriendRequestsCount() {return friendRequestsCount; }

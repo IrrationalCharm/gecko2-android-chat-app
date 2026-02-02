@@ -6,6 +6,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.dominik.Gecko2Chat.R;
@@ -42,6 +43,13 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
         holder.tvName.setText(chat.name());
         holder.tvMessage.setText(chat.lastMessage());
 
+        if (chat.unreadCount() == 0) holder.cvUnreadBadge.setVisibility(View.GONE);
+
+        if (chat.unreadCount() > 0) {
+            holder.cvUnreadBadge.setVisibility(View.VISIBLE);
+            holder.tvUnreadCount.setText(String.valueOf(chat.unreadCount()));
+        }
+
         holder.itemView.setOnClickListener(v -> listener.onChatClick(chat));
 
         //TODO set avatar image here
@@ -54,11 +62,14 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
 
     //Inner class the hold teh views
     public static class ChatViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvMessage;
+        CardView cvUnreadBadge;
+        TextView tvName, tvMessage, tvUnreadCount;
         public ChatViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tvName);
             tvMessage = itemView.findViewById(R.id.tvMessage);
+            tvUnreadCount = itemView.findViewById(R.id.tvUnreadCount);
+            cvUnreadBadge = itemView.findViewById(R.id.cvUnreadBadge);
         }
     }
 }

@@ -40,14 +40,6 @@ public interface MessageDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<MessageEntity> messages);
 
-    //Get the last message of each chat
-    @Query("""
-            SELECT m.* FROM messages m
-            INNER JOIN (SELECT conversationId, MAX(timestamp) as max_ts FROM messages GROUP BY conversationId) latest
-            ON m.conversationId = latest.conversationId AND m.timestamp = latest.max_ts
-            ORDER BY m.timestamp DESC
-            """)
-    LiveData<List<MessageEntity>> getRecentChats();
 
     //Get last message stored in Room
     @Query("SELECT MAX(timestamp) FROM messages")

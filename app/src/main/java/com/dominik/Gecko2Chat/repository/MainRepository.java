@@ -6,8 +6,10 @@ import android.util.Log;
 import androidx.lifecycle.LiveData;
 
 import com.dominik.Gecko2Chat.database.AppDatabase;
+import com.dominik.Gecko2Chat.database.dao.ConversationDao;
 import com.dominik.Gecko2Chat.database.dao.FriendDao;
 import com.dominik.Gecko2Chat.database.dao.FriendRequestDao;
+import com.dominik.Gecko2Chat.database.entities.ConversationEntity;
 import com.dominik.Gecko2Chat.database.entities.FriendEntity;
 import com.dominik.Gecko2Chat.database.dao.MessageDao;
 import com.dominik.Gecko2Chat.database.entities.FriendRequestEntity;
@@ -34,6 +36,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -49,6 +52,7 @@ public class MainRepository {
     private final UserApi userApi;
     private final MessageDao messageDao;
     private final FriendDao friendDao;
+    private final ConversationDao conversationDao;
     private final FriendRequestDao friendRequestDao;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final CompositeDisposable compositeDisposable;
@@ -61,12 +65,13 @@ public class MainRepository {
         compositeDisposable = new CompositeDisposable();
         messageDao = db.messageDao();
         friendDao = db.friendDao();
+        conversationDao = db.conversationDao();
         friendRequestDao = db.friendRequestDao();
 
         monitorConnectionStatus();
     }
 
-    public static MainRepository getInstance(Context context) {
+    public static synchronized MainRepository getInstance(Context context) {
         if (instance == null) {
             instance = new MainRepository(context);
         }
@@ -132,14 +137,30 @@ public class MainRepository {
                             }
                             messageDao.insertAll(messageEntities);
 
-                            messageEntities.stream()
+                            Optional<MessageEntity> lastMessageOpt = messageEntities.stream()
                                     .filter(msg -> msg.recipientId.equals(myId)) //Filter by messages where im the recipient
                                     .max(Comparator.comparing(m -> m.timestamp)) //Compare each message and return the highest timestamp (last message received)
-                                    .ifPresent(this::sendDeliveryReceipt); //Deliver it to the server, so that the other user can see (if online) that it was deliveredTimestamp. Otherwise it just updates the Conversation Table in message-persistence-service
+                                    .stream().findAny(); //Deliver it to the server, so that the other user can see (if online) that it was deliveredTimestamp. Otherwise it just updates the Conversation Table in message-persistence-service
+
+                            if(lastMessageOpt.isPresent()) {
+                                MessageEntity lastMessage = lastMessageOpt.get();
+                                String friendId = lastMessage.senderId.equals(myId) ? lastMessage.recipientId : lastMessage.senderId;
+
+
+                                conversationDao.insertOrUpdate(new ConversationEntity(
+                                        conv.conversationId(),
+                                        friendId,
+                                        lastMessage.content,
+                                        lastMessage.timestamp,
+                                        conv.unreadCount(),
+                                        lastMessage.senderId
+                                        ));
+
+                                sendDeliveryReceipt(lastMessage);
+                            }
                         }
 
                         messageDao.markMessagesAsDelivered(conv.conversationId(), myId, conv.lastDeliveredMessage(), MessageStatus.DELIVERED);
-
 
                     }
                 } else Log.e("MainRepository", "Conversation summary is null");

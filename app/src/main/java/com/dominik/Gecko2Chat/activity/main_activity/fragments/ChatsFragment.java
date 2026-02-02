@@ -67,5 +67,7 @@ public class ChatsFragment extends BaseConnectionFragment {
             adapter.notifyDataSetChanged();
         });
 
+
+
     }
 }
