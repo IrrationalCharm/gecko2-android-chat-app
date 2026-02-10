@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.dominik.Gecko2Chat.R;
@@ -18,6 +19,7 @@ import com.google.android.material.card.MaterialCardView;
 
 public class ProfileFragment extends Fragment {
 
+    private ImageView btn_upload;
     private MaterialCardView cvBtnLogout;
     private MainViewModel viewModel;
     private TextView tvMyDisplayName;
@@ -37,10 +39,17 @@ public class ProfileFragment extends Fragment {
         cvBtnLogout = view.findViewById(R.id.cvLogout);
         tvMyDisplayName = view.findViewById(R.id.tvMyDisplayName);
         tvMyUsername = view.findViewById(R.id.tvMyUsername);
+        btn_upload = view.findViewById(R.id.btn_upload);
+
 
         cvBtnLogout.setOnClickListener(view1 -> {
             ((BaseActivity) requireActivity()).performLogout();
         });
+
+        btn_upload.setOnClickListener(view1 -> {
+
+        });
+
 
         return view;
     }

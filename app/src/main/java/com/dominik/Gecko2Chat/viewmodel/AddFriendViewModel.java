@@ -29,7 +29,7 @@ public class AddFriendViewModel extends AndroidViewModel {
 
         uiState.setValue(new UiState.Loading());
 
-        repository.sendFriendRequest(rawInput, new FriendRequestRepository.RepositoryCallback<>() {
+        repository.sendFriendRequest(rawInput, new FriendRequestRepository.RepositoryCallback() {
             @Override
             public void onSuccess() {
                 uiState.setValue(new UiState.Success());

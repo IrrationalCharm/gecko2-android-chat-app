@@ -2,6 +2,7 @@ package com.dominik.Gecko2Chat.activity.onBoarding;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -19,10 +20,13 @@ import com.dominik.Gecko2Chat.activity.onBoarding.fragments.UsernameFragment;
 import com.dominik.Gecko2Chat.model.OnBoardingRequestDto;
 import com.dominik.Gecko2Chat.model.api.ApiResponse;
 import com.dominik.Gecko2Chat.model.api.RegistrationApi;
+import com.dominik.Gecko2Chat.model.api.UserApi;
 import com.dominik.Gecko2Chat.model.response.UserDto;
 import com.dominik.Gecko2Chat.rest.RestClient;
+import com.dominik.Gecko2Chat.utils.ImageUploadUtils;
 import com.google.android.material.button.MaterialButton;
 
+import okhttp3.MultipartBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -189,6 +193,49 @@ public class OnboardingActivity extends AppCompatActivity {
     }
 
     private void uploadProfilePicture(String finalProfileImageUri) {
+        if (finalProfileImageUri == null || finalProfileImageUri.isEmpty()) {
+            goToMainActivity();
+            return;
+        }
+
+        Uri fileUri = Uri.parse(finalProfileImageUri);
+
+        // 1. Prepare the file part using your existing utility
+        // "image" must match the @RequestPart name in Spring Boot
+        MultipartBody.Part body = ImageUploadUtils.prepareImagePart(this, "image", fileUri);
+
+        if (body == null) {
+            Toast.makeText(this, "Failed to process image file", Toast.LENGTH_SHORT).show();
+            goToMainActivity();
+            return;
+        }
+
+        // 2. Get the API instance
+        UserApi userApi = RestClient.getInstance(this).getUserApi();
+
+        // 3. Make the call
+        userApi.uploadAvatar(body).enqueue(new Callback<ApiResponse<String>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<String>> call, Response<ApiResponse<String>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String imageUrl = response.body().data();
+                    Log.d("Onboarding", "Image uploaded successfully: " + imageUrl);
+                    // Ideally, update local user cache here if needed,
+                    // but your app will likely fetch fresh data on startup anyway.
+                } else {
+                    Log.e("Onboarding", "Upload failed: " + response.code());
+                    Toast.makeText(OnboardingActivity.this, "Failed to upload image", Toast.LENGTH_SHORT).show();
+                }
+                // Navigate regardless of image success/failure to not block the user
+                goToMainActivity();
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<String>> call, Throwable t) {
+                Log.e("Onboarding", "Upload error", t);
+                goToMainActivity();
+            }
+        });
     }
 
     private void handleValidationError(int index, String errorMessage) {

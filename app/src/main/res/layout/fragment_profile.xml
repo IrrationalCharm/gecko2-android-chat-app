@@ -15,10 +15,10 @@
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cvProfileImage"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
             android:layout_marginTop="40dp"
-            app:cardCornerRadius="60dp"
+            app:cardCornerRadius="75dp"
             app:cardElevation="0dp"
             app:strokeWidth="0dp"
             app:cardBackgroundColor="@color/surface_dark"
@@ -26,14 +26,30 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-            <ImageView
-                android:id="@+id/imgProfile"
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/iv_profile_avatar"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/person_icon"
+                android:padding="3dp"
                 android:scaleType="centerCrop"
-                tools:src="@drawable/ic_launcher_background"/>
+                android:src="@drawable/person_icon"
+                app:shapeAppearanceOverlay="@style/CircleImageView"
+                app:strokeColor="#1B5E20"
+                app:strokeWidth="2dp" />
+
         </com.google.android.material.card.MaterialCardView>
+
+        <ImageView
+            android:id="@+id/btn_upload"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/circle_white_bg"
+            android:elevation="6dp"
+            android:padding="10dp"
+            android:src="@android:drawable/ic_menu_camera"
+            app:tint="#1B5E20"
+            app:layout_constraintBottom_toBottomOf="@id/cvProfileImage"
+            app:layout_constraintEnd_toEndOf="@id/cvProfileImage" />
 
         <TextView
             android:id="@+id/tvMyDisplayName"
@@ -167,7 +183,8 @@
                 android:gravity="center"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                android:textColor="#FF5252"/> </com.google.android.material.card.MaterialCardView>
+                android:textColor="#FF5252"/>
+        </com.google.android.material.card.MaterialCardView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

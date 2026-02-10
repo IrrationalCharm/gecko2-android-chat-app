@@ -117,7 +117,7 @@ public class MessageRepository {
         executor.execute(()-> {
             int numberOfMessagesOnDelivered = messageDao.numberOfMessagesDelivered(currentConversationId, friendId);
 
-            if(numberOfMessagesOnDelivered == 0) return;
+            //if(numberOfMessagesOnDelivered == 0) return;
 
             conversationDao.markConversationAsRead(currentConversationId);
             messageDao.markAllMessagesAsRead(currentConversationId, friendId);

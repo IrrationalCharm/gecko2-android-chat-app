@@ -14,7 +14,6 @@ import com.dominik.Gecko2Chat.activity.BaseActivity;
 import com.dominik.Gecko2Chat.activity.main_activity.fragments.ChatsFragment;
 import com.dominik.Gecko2Chat.activity.main_activity.fragments.ContactsFragment;
 import com.dominik.Gecko2Chat.activity.main_activity.fragments.ProfileFragment;
-import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.dominik.Gecko2Chat.viewmodel.MainViewModel;
 import com.google.android.material.card.MaterialCardView;
 
