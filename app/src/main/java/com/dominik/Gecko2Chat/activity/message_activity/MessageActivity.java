@@ -11,6 +11,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.CircleCrop;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.BaseActivity;
 import com.dominik.Gecko2Chat.activity.message_activity.adapter.MessageAdapter;
@@ -26,9 +28,9 @@ public class MessageActivity extends BaseActivity {
     private RecyclerView rvChatMessages;
     private MessageAdapter adapter;
     private EditText etMessageInput;
-    private ImageView btnBack;
+    private ImageView btnBack, ivChatAvatar;
     private CardView btnSend;
-    private String friendId, friendName;
+    private String friendId, friendName, friendAvatarUrl;
     private TextView tvChatStatus;
     private MessageViewModel messageViewModel;
 
@@ -41,6 +43,8 @@ public class MessageActivity extends BaseActivity {
         myId = UserManager.getInstance(this).getUser().internalId();
         friendId = getIntent().getStringExtra("FRIEND_ID");
         friendName = getIntent().getStringExtra("FRIEND_NAME");
+        friendAvatarUrl = getIntent().getStringExtra("FRIEND_AVATAR");
+
 
         initViews();
         initListeners();
@@ -130,6 +134,16 @@ public class MessageActivity extends BaseActivity {
         btnSend = findViewById(R.id.btnSend);
         btnBack = findViewById(R.id.btnBack);
         tvChatStatus = findViewById(R.id.tvChatStatus);
+        ivChatAvatar = findViewById(R.id.ivChatAvatar);
+
+        if (friendAvatarUrl != null && !friendAvatarUrl.isEmpty()) {
+            Glide.with(this)
+                    .load(friendAvatarUrl.contains("null") ? R.drawable.person_icon : friendAvatarUrl)
+                    .placeholder(R.drawable.person_icon)
+                    .error(R.drawable.person_icon)
+                    .transform(new CircleCrop())
+                    .into(ivChatAvatar);
+        }
 
         rvChatMessages = findViewById(R.id.rvChatMessages);
         var layoutManager = new LinearLayoutManager(this);
@@ -151,10 +165,6 @@ public class MessageActivity extends BaseActivity {
         messageViewModel.addNewMessage(content);
 
         etMessageInput.setText("");
-
-        if (!isUserAtBottom()) {
-            rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
-        }
 
     }
 

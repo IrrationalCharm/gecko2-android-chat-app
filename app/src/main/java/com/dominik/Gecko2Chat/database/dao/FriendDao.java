@@ -18,4 +18,7 @@ public interface FriendDao {
 
     @Query("SELECT * FROM friends")
     LiveData<List<FriendEntity>> getAllFriends();
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertFriend(FriendEntity friendEntity);
 }

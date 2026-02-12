@@ -34,22 +34,26 @@ android {
 }
 
 dependencies {
-    implementation("net.openid:appauth:0.11.1")
-    implementation("com.squareup.retrofit2:retrofit:3.0.0")
-    implementation("com.squareup.retrofit2:converter-gson:3.0.0")
-    implementation("androidx.lifecycle:lifecycle-livedata:2.10.0")
-    implementation("androidx.lifecycle:lifecycle-process:2.10.0")
-    implementation("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
+    implementation(libs.appauth)
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.lifecycle.livedata)
+    implementation(libs.lifecycle.process)
+    implementation(libs.stompprotocolandroid)
     // RxJava required by the above library
-    implementation("io.reactivex.rxjava2:rxjava:2.2.5")
-    implementation("io.reactivex.rxjava2:rxandroid:2.1.0")
+    implementation(libs.rxjava)
+    implementation(libs.rxandroid)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
 
-    val room_version = "2.8.4"
-    implementation("androidx.room:room-runtime:$room_version")
-    annotationProcessor("androidx.room:room-compiler:$room_version")
-    implementation("androidx.room:room-rxjava2:$room_version")
+    implementation(libs.tink.android)
+
+    implementation(libs.glide)
+    annotationProcessor(libs.compiler)
+
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
+    implementation(libs.room.rxjava2)
 
     implementation(libs.appcompat)
     implementation(libs.material)

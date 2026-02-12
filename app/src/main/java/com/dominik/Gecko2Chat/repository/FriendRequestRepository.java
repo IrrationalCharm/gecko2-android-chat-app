@@ -8,7 +8,9 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 
 import com.dominik.Gecko2Chat.database.AppDatabase;
+import com.dominik.Gecko2Chat.database.dao.FriendDao;
 import com.dominik.Gecko2Chat.database.dao.FriendRequestDao;
+import com.dominik.Gecko2Chat.database.entities.FriendEntity;
 import com.dominik.Gecko2Chat.database.entities.FriendRequestEntity;
 import com.dominik.Gecko2Chat.enums.ErrorCode;
 import com.dominik.Gecko2Chat.enums.FriendRequestAction;
@@ -16,10 +18,12 @@ import com.dominik.Gecko2Chat.model.api.ApiResponse;
 import com.dominik.Gecko2Chat.model.api.FriendshipApi;
 import com.dominik.Gecko2Chat.model.request.UpdateFriendRequestDto;
 import com.dominik.Gecko2Chat.model.websocket.FriendRequestDto;
+import com.dominik.Gecko2Chat.model.websocket.incoming.FriendRequestAcceptedEvent;
 import com.dominik.Gecko2Chat.model.websocket.incoming.FriendRequestReceivedEvent;
 import com.dominik.Gecko2Chat.rest.RestClient;
 import com.dominik.Gecko2Chat.utils.ErrorUtils;
 import com.dominik.Gecko2Chat.utils.UserManager;
+import com.dominik.Gecko2Chat.utils.mapper.FriendMapper;
 import com.dominik.Gecko2Chat.utils.mapper.FriendRequestMapper;
 
 import java.time.Instant;
@@ -35,9 +39,12 @@ public class FriendRequestRepository {
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final FriendRequestDao friendRequestDao;
+    private final FriendDao friendDao;
     private final FriendshipApi friendshipApi;
     private static FriendRequestRepository instance;
     private final UserManager userManager;
+
+
 
     public interface RepositoryCallback {
         void onSuccess();
@@ -47,6 +54,7 @@ public class FriendRequestRepository {
     private FriendRequestRepository(Context context) {
         userManager = UserManager.getInstance(context);
         friendRequestDao = AppDatabase.getInstance(context).friendRequestDao();
+        friendDao = AppDatabase.getInstance(context).friendDao();
         friendshipApi = RestClient.getInstance(context).getFriendshipApi();
     }
 
@@ -85,7 +93,13 @@ public class FriendRequestRepository {
     }
 
 
+    public void incomingFriendRequestAccepted(FriendRequestAcceptedEvent event) {
+        Log.i("FriendRequestRepository", "Friend request accepted: " + event);
 
+        FriendEntity friendEntity = FriendMapper.mapFriendDtoToEntity(event.newFriend());
+        executor.execute(() -> friendDao.insertFriend(friendEntity));
+
+    }
 
     public void incomingFriendRequest(FriendRequestReceivedEvent dto) {
         Log.i("FriendRequestRepository", "Friend request received: " + dto);

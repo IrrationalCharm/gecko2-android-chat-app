@@ -29,10 +29,10 @@ public class ChatsFragment extends BaseConnectionFragment {
     private ChatAdapter adapter;
     private List<ChatModel> chatList;
 
-
-    public ChatsFragment(WebSocketManager.ConnectionStatus lastStatus) {
-        super(lastStatus);
+    public ChatsFragment() {
+        super();
     }
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -48,6 +48,7 @@ public class ChatsFragment extends BaseConnectionFragment {
             Intent intent = new Intent(getContext(), MessageActivity.class);
             intent.putExtra("FRIEND_ID", chat.friendId());
             intent.putExtra("FRIEND_NAME", chat.name());
+            intent.putExtra("FRIEND_AVATAR", chat.avatar());
             startActivity(intent);
         });
         recyclerView.setAdapter(adapter);

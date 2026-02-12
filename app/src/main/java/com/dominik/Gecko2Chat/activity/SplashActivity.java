@@ -2,7 +2,6 @@ package com.dominik.Gecko2Chat.activity;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -10,12 +9,13 @@ import android.os.Looper;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide;
 import com.dominik.Gecko2Chat.activity.main_activity.MainActivity;
 import com.dominik.Gecko2Chat.activity.onBoarding.OnboardingActivity;
+import com.dominik.Gecko2Chat.database.AppDatabase;
 import com.dominik.Gecko2Chat.utils.AuthStateManager;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.utils.UserManager;
-import com.dominik.Gecko2Chat.utils.WebSocketManager;
 
 import net.openid.appauth.AppAuthConfiguration;
 import net.openid.appauth.AuthState;
@@ -24,6 +24,8 @@ import net.openid.appauth.connectivity.ConnectionBuilder;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 @SuppressLint("CustomSplashScreen")
@@ -72,7 +74,7 @@ public class SplashActivity extends AppCompatActivity {
             return;
         }
 
-        state.setNeedsTokenRefresh(true);
+        //state.setNeedsTokenRefresh(true);
 
         // 2. Try to get a FRESH token (Auto-refreshes if needed)
         state.performActionWithFreshTokens(authService, (accessToken, idToken, ex) -> {
@@ -81,9 +83,12 @@ public class SplashActivity extends AppCompatActivity {
                 navigateToLogin();
                 return;
             }
-            // Success! Token is valid/refreshed.
+
+            //Token is valid/refreshed.
             authStateManager.updateAuthState(state);
-            userManager.saveUserFromIdToken(idToken);
+            if (idToken != null) {
+                userManager.saveUserFromIdToken(idToken);
+            }
 
             // 3. Now check Onboarding status
             if (userManager.getUser().isOnboarded()) {
@@ -97,6 +102,18 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void navigateToLogin() {
+        userManager.clearUser();
+        authStateManager.clearAuthState();
+
+        try( ExecutorService executor = Executors.newSingleThreadExecutor() ) {
+            executor.execute(() -> {
+                AppDatabase.getInstance(this).clearAllTables();
+
+                //clear Glide Disk Cache
+                Glide.get(getApplicationContext()).clearDiskCache();
+            });
+        }
+
         startActivity(new Intent(this, LoginActivity.class));
         finish();
     }

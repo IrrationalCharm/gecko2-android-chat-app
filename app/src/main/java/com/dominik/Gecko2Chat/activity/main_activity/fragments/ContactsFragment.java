@@ -33,9 +33,10 @@ public class ContactsFragment extends BaseConnectionFragment {
     private CardView btnFriendRequests;
     private TextView tvRequestCount;
 
-    public ContactsFragment(WebSocketManager.ConnectionStatus lastStatus) {
-        super(lastStatus);
+    public ContactsFragment() {
+        super();
     }
+
 
 
     @Nullable
@@ -67,6 +68,7 @@ public class ContactsFragment extends BaseConnectionFragment {
             Intent intent = new Intent(getContext(), MessageActivity.class);
             intent.putExtra("FRIEND_ID", contact.internalId());
             intent.putExtra("FRIEND_NAME", contact.displayName());
+            intent.putExtra("FRIEND_AVATAR", contact.avatarUrl());
             startActivity(intent);
         });
 

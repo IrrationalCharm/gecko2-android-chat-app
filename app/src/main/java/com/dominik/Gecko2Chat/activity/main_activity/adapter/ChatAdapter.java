@@ -3,12 +3,14 @@ package com.dominik.Gecko2Chat.activity.main_activity.adapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.model.ChatModel;
 
@@ -52,7 +54,12 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
 
         holder.itemView.setOnClickListener(v -> listener.onChatClick(chat));
 
-        //TODO set avatar image here
+        Glide.with(holder.itemView.getContext())
+                .load(chat.avatar().contains("null") ? R.drawable.person_icon : chat.avatar())
+                .placeholder(R.drawable.person_icon)
+                .error(R.drawable.person_icon)
+                .circleCrop()
+                .into(holder.imgAvatar);
     }
 
     @Override
@@ -63,6 +70,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
     //Inner class the hold teh views
     public static class ChatViewHolder extends RecyclerView.ViewHolder {
         CardView cvUnreadBadge;
+        ImageView imgAvatar;
         TextView tvName, tvMessage, tvUnreadCount;
         public ChatViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -70,6 +78,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
             tvMessage = itemView.findViewById(R.id.tvMessage);
             tvUnreadCount = itemView.findViewById(R.id.tvUnreadCount);
             cvUnreadBadge = itemView.findViewById(R.id.cvUnreadBadge);
+            imgAvatar = itemView.findViewById(R.id.imgAvatar);
         }
     }
 }

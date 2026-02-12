@@ -12,19 +12,22 @@
         android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0" />
 
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/bottomNavContainer"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="65dp"
         android:layout_marginBottom="24dp"
         android:layout_marginHorizontal="32dp"
-        app:cardCornerRadius="30dp"
-        app:cardElevation="10dp"
+        app:cardCornerRadius="32dp"
+        app:cardElevation="12dp"
+        app:strokeWidth="0dp"
         app:cardBackgroundColor="@color/surface_dark"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -35,75 +38,124 @@
             android:layout_height="match_parent"
             android:orientation="horizontal"
             android:weightSum="3"
-            android:background="@color/surface_dark">
+            android:baselineAligned="false">
 
-            <TextView
+            <FrameLayout
                 android:id="@+id/navContacts"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="Contacts"
-                android:gravity="center"
-                android:textColor="@color/text_secondary"
-                android:paddingTop="8dp"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                app:drawableTopCompat="@drawable/address_book_fill_svgrepo_com" />
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless">
 
-            <TextView
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/iconContacts"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/address_book_fill_svgrepo_com"
+                        app:tint="@color/text_secondary"/>
+
+                    <TextView
+                        android:id="@+id/tvContacts"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Contacts"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <FrameLayout
                 android:id="@+id/navChats"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="Chats"
-                android:gravity="center"
-                android:paddingTop="8dp"
-                android:textColor="@color/text_secondary"
-                android:textStyle="bold"
-                android:textSize="11sp"
-                app:drawableTopCompat="@drawable/chat_speech_bubble_svgrepo_com" />
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless">
 
-            <LinearLayout
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/iconChats"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/chat_speech_bubble_svgrepo_com"
+                        app:tint="@color/text_secondary"/>
+
+                    <TextView
+                        android:id="@+id/tvChats"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Chats"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <FrameLayout
                 android:id="@+id/navProfile"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:paddingTop="7dp">
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless">
 
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cvProfileImage"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="0dp"
-                    app:cardBackgroundColor="@color/text_secondary"
-
-                    app:strokeWidth="2dp"
-                    app:strokeColor="@android:color/transparent">
-
-                    <ImageView
-                        android:id="@+id/imgProfileAvatar"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:src="@drawable/person_icon"
-                        android:scaleType="centerCrop"/>
-                </com.google.android.material.card.MaterialCardView>
-
-                <TextView
-                    android:id="@+id/tvProfileText"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:paddingTop="4dp"
-                    android:text="You"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_secondary"/>
-            </LinearLayout>
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="35dp"
+                        android:layout_height="35dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="@android:color/transparent"
+                        app:strokeWidth="0dp">
+
+                        <ImageView
+                            android:id="@+id/imgProfileAvatar"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/person_icon"
+                            android:scaleType="centerCrop"/>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <TextView
+                        android:id="@+id/tvProfileText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="You"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_secondary"/>
+                </LinearLayout>
+            </FrameLayout>
 
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

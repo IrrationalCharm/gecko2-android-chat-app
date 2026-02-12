@@ -1,7 +1,9 @@
 package com.dominik.Gecko2Chat.activity.main_activity;
 
-import android.graphics.Color;
+
 import android.os.Bundle;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 
@@ -9,13 +11,13 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.bumptech.glide.Glide;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.BaseActivity;
 import com.dominik.Gecko2Chat.activity.main_activity.fragments.ChatsFragment;
 import com.dominik.Gecko2Chat.activity.main_activity.fragments.ContactsFragment;
 import com.dominik.Gecko2Chat.activity.main_activity.fragments.ProfileFragment;
 import com.dominik.Gecko2Chat.viewmodel.MainViewModel;
-import com.google.android.material.card.MaterialCardView;
 
 
 
@@ -24,58 +26,67 @@ public class MainActivity extends BaseActivity {
     private Fragment chatsFragment;
     private Fragment contactFragment;
     private final Fragment profileFragment = new ProfileFragment();
-    private TextView navContacts, navChats, tvProfileText;
-    private MaterialCardView cvProfileImage;
+    private TextView tvProfileText, tvChats, tvContacts;
+    private FrameLayout navContacts, navChats, navProfile;
+    private ImageView imgProfileAvatar, iconChats, iconContacts;
 
+    private MainViewModel viewModel;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
 
+        viewModel = new ViewModelProvider(this).get(MainViewModel.class);
+
         initViews();
         initListeners();
 
-        MainViewModel viewModel = new ViewModelProvider(this).get(MainViewModel.class);
-
-        chatsFragment = new ChatsFragment(viewModel.getConnectionStatus().getValue());
-        contactFragment = new ContactsFragment(viewModel.getConnectionStatus().getValue());
+        chatsFragment = new ChatsFragment();
+        contactFragment = new ContactsFragment();
 
         loadFragment(chatsFragment);
+
     }
 
 
     private void updateMenuUI(Tabs activeTab) {
         int colorGreen = ContextCompat.getColor(this, R.color.green_accent);
         int colorGrey = ContextCompat.getColor(this, R.color.text_secondary);
-        int colorTransparent = Color.TRANSPARENT; // Or use ContextCompat.getColor(this, android.R.color.transparent);
 
-        // RESET ALL (Grey text, removed glow background, removed stroke)
-        resetTextView(navChats, colorGrey);
-        resetTextView(navContacts, colorGrey);
-        // Reset Profile specifically
-        tvProfileText.setTextColor(colorGrey);
+        //reset text
+        resetTextView(tvProfileText, colorGrey);
+        resetTextView(tvChats, colorGrey);
+        resetTextView(tvContacts, colorGrey);
 
-        // RESET STROKE TO TRANSPARENT
-        cvProfileImage.setStrokeColor(colorTransparent);
+        //reset icons
+        iconChats.setColorFilter(colorGrey);
+        iconContacts.setColorFilter(colorGrey);
 
+        iconChats.setAlpha(0.5f);
+        iconContacts.setAlpha(0.5f);
+        imgProfileAvatar.setAlpha(0.5f);
 
-        // 2. SET ACTIVE (Green text, glowing background, AND GREEN STROKE for profile)
         switch (activeTab) {
             case CHATS:
-                activateTextView(navChats, colorGreen);
+                activateTextView(tvChats, colorGreen);
+                iconChats.setAlpha(1f);
+                iconChats.setColorFilter(colorGreen);
                 break;
+
             case CONTACTS:
-                activateTextView(navContacts, colorGreen);
+                activateTextView(tvContacts, colorGreen);
+                iconContacts.setAlpha(1f);
+                iconContacts.setColorFilter(colorGreen);
                 break;
+
             case PROFILE:
-                // SET STROKE TO GREEN
-                cvProfileImage.setStrokeColor(colorGreen);
+                imgProfileAvatar.setAlpha(1f);
+                activateTextView(tvProfileText, colorGreen);
                 break;
         }
     }
 
-    // Helper for standard TextView tabs (unchanged)
     private void resetTextView(TextView view, int color) {
         view.setTextColor(color);
         view.setBackground(null);
@@ -84,7 +95,6 @@ public class MainActivity extends BaseActivity {
         }
     }
 
-    // Helper for standard TextView tabs (unchanged)
     private void activateTextView(TextView view, int color) {
         view.setTextColor(color);
         //view.setBackgroundResource(R.drawable.bg_nav_active);
@@ -98,13 +108,40 @@ public class MainActivity extends BaseActivity {
                 .beginTransaction()
                 .replace(R.id.fragmentContainer, fragment)
                 .commit();
+
+        switch (fragment) {
+            case ChatsFragment ignored -> updateMenuUI(Tabs.CHATS);
+            case ContactsFragment ignored -> updateMenuUI(Tabs.CONTACTS);
+            case ProfileFragment ignored -> updateMenuUI(Tabs.PROFILE);
+            default -> {
+            }
+        }
     }
 
     private void initViews() {
         navContacts = findViewById(R.id.navContacts);
         navChats = findViewById(R.id.navChats);
+        navProfile = findViewById(R.id.navProfile);
+
         tvProfileText = findViewById(R.id.tvProfileText);
-        cvProfileImage = findViewById(R.id.cvProfileImage);
+        tvChats = findViewById(R.id.tvChats);
+        tvContacts = findViewById(R.id.tvContacts);
+
+        imgProfileAvatar = findViewById(R.id.imgProfileAvatar);
+        iconChats = findViewById(R.id.iconChats);
+        iconContacts = findViewById(R.id.iconContacts);
+
+        viewModel.getCurrentUser().observe(this, user -> {
+            String avatarUrl = user.profileImageUrl();
+            Glide.with(this)
+                    .load(avatarUrl.contains("null") ? R.drawable.person_icon : avatarUrl)
+                    .placeholder(R.drawable.person_icon)
+                    .error(R.drawable.person_icon)
+                    .circleCrop()
+                    .into(imgProfileAvatar);
+        });
+
+
     }
 
 
@@ -119,7 +156,7 @@ public class MainActivity extends BaseActivity {
             updateMenuUI(Tabs.CONTACTS);
         });
 
-        cvProfileImage.setOnClickListener(v -> {
+        navProfile.setOnClickListener(v -> {
             loadFragment(profileFragment);
             updateMenuUI(Tabs.PROFILE);
         });

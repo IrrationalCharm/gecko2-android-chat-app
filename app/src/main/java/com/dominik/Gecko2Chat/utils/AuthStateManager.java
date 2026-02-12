@@ -16,17 +16,32 @@ public class AuthStateManager {
     private static final String KEY_STATE = "auth_state";
     private static final String AUTH_ENDPOINT = "http://192.168.1.134:8080/realms/gecko2-realm/protocol/openid-connect/auth";
     private static final String TOKEN_ENDPOINT = "http://192.168.1.134:8080/realms/gecko2-realm/protocol/openid-connect/token";
-    private final SharedPreferences prefers;
+    private final SharedPreferences prefs;
+
+    private final CryptoManager cryptoManager;
 
     public AuthStateManager(Context context) {
-        prefers = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        try {
+            cryptoManager = new CryptoManager(context);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public AuthState getAuthState() {
-        String json = prefers.getString(KEY_STATE, null);
+        String encrypted = prefs.getString(KEY_STATE, null);
         AuthorizationServiceConfiguration config = createConfig();
 
-        if (json == null) {
+        if (encrypted == null) {
+            return new AuthState(config);
+        }
+
+        String json = null;
+        try {
+            json = cryptoManager.decrypt(encrypted);
+        } catch (Exception e) {
+            // If decryption fails, return a fresh empty state
             return new AuthState(config);
         }
 
@@ -76,11 +91,16 @@ public class AuthStateManager {
 
 
     public void updateAuthState(AuthState state) {
-        prefers.edit().putString(KEY_STATE, state.jsonSerializeString()).apply();
+        try {
+            String encrypted = cryptoManager.encrypt(state.jsonSerializeString());
+            prefs.edit().putString(KEY_STATE, encrypted).apply();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void clearAuthState() {
-        prefers.edit().remove(KEY_STATE).apply();
+        prefs.edit().remove(KEY_STATE).apply();
     }
 
 

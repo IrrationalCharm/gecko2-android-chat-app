@@ -2,6 +2,7 @@ package com.dominik.Gecko2Chat.model.websocket.adapter;
 
 import com.dominik.Gecko2Chat.enums.MessageType;
 import com.dominik.Gecko2Chat.model.websocket.incoming.ChatMessageEvent;
+import com.dominik.Gecko2Chat.model.websocket.incoming.FriendRequestAcceptedEvent;
 import com.dominik.Gecko2Chat.model.websocket.incoming.FriendRequestReceivedEvent;
 import com.dominik.Gecko2Chat.model.websocket.incoming.MessageDeliveredEvent;
 import com.dominik.Gecko2Chat.model.websocket.incoming.MessageReadEvent;
@@ -32,6 +33,7 @@ public class ServerMessageDeserializer implements JsonDeserializer<ServerMessage
             case MESSAGE_DELIVERED_SERVER -> context.deserialize(json, MessageDeliveredEvent.class);
             case MESSAGE_READ_SERVER -> context.deserialize(json, MessageReadEvent.class);
             case FRIEND_REQUEST_SERVER -> context.deserialize(json, FriendRequestReceivedEvent.class);
+            case FRIEND_REQUEST_ACCEPTED_SERVER -> context.deserialize(json, FriendRequestAcceptedEvent.class);
 
             default -> throw new IllegalStateException("Unexpected value: " + type);
         };

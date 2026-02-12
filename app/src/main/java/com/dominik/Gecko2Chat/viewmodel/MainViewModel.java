@@ -1,8 +1,11 @@
 package com.dominik.Gecko2Chat.viewmodel;
 
 import android.app.Application;
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -16,9 +19,12 @@ import com.dominik.Gecko2Chat.database.entities.FriendEntity;
 import com.dominik.Gecko2Chat.model.ChatModel;
 import com.dominik.Gecko2Chat.model.ContactModel;
 import com.dominik.Gecko2Chat.model.User;
+import com.dominik.Gecko2Chat.model.api.ApiResponse;
 import com.dominik.Gecko2Chat.repository.FriendRequestRepository;
 import com.dominik.Gecko2Chat.repository.MainRepository;
 import com.dominik.Gecko2Chat.repository.MessageRepository;
+import com.dominik.Gecko2Chat.rest.RestClient;
+import com.dominik.Gecko2Chat.utils.ImageUploadUtils;
 import com.dominik.Gecko2Chat.utils.UserManager;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
 
@@ -29,6 +35,10 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
+import okhttp3.MultipartBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MainViewModel extends AndroidViewModel {
 
@@ -93,6 +103,7 @@ public class MainViewModel extends AndroidViewModel {
         currentUser.setValue(user);
     }
 
+
     private void updateChatList(List<ConversationEntity> chats, List<FriendEntity> friends) {
         if (chats == null || chats.isEmpty()) return;
         if (friends == null || friends.isEmpty()) return;
@@ -127,11 +138,44 @@ public class MainViewModel extends AndroidViewModel {
     }
 
 
+    public void uploadProfileImage(Context context, Uri imageUri) {
+        MultipartBody.Part body = ImageUploadUtils.prepareImagePart(context, "image", imageUri);
+
+        if (body == null) {
+            Toast.makeText(context, "Failed to prepare image", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        RestClient.getInstance(context).getUserApi().uploadAvatar(body).enqueue(new Callback<ApiResponse<String>>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiResponse<String>> call, @NonNull Response<ApiResponse<String>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String newImageUrl = response.body().data();
+                    Log.d("ProfileUpload", "Upload successful: " + newImageUrl);
+
+                    //Refresh user data to update the UI with the new image
+                    mainRepository.refreshStartupData();
+                    Toast.makeText(context, "Profile picture updated!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Log.e("ProfileUpload", "Upload failed: " + response.code() + " - " + response.message());
+                    Toast.makeText(context, "Upload failed", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ApiResponse<String>> call, @NonNull Throwable t) {
+                Log.e("ProfileUpload", "Upload error", t);
+                Toast.makeText(context, "Network error", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+
     private void monitorConnectionStatus() {
-        // 4. Update the LiveData
+        //update the livedata
         Disposable d = WebSocketManager.getInstance().getConnectionStatus()
                 .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread()) // Ensure we are on UI thread for LiveData
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         connectionStatus::setValue,
                         throwable -> {

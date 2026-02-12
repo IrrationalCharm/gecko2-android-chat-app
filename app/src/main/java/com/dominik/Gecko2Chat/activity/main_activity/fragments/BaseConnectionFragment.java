@@ -34,11 +34,11 @@ public abstract class BaseConnectionFragment extends Fragment {
     private ValueAnimator shimmerAnimator;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable transitionRunnable;
-    private WebSocketManager.ConnectionStatus lastStatus;
+    private WebSocketManager.ConnectionStatus lastStatus = WebSocketManager.ConnectionStatus.CONNECTED;
 
 
-    public BaseConnectionFragment(WebSocketManager.ConnectionStatus lastStatus) {
-        this.lastStatus = lastStatus;
+    public BaseConnectionFragment() {
+        // Required empty public constructor
     }
 
     @Override

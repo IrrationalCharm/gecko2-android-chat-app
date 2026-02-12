@@ -4,6 +4,7 @@ package com.dominik.Gecko2Chat.utils;
 import android.content.Context;
 
 import com.dominik.Gecko2Chat.model.websocket.incoming.ChatMessageEvent;
+import com.dominik.Gecko2Chat.model.websocket.incoming.FriendRequestAcceptedEvent;
 import com.dominik.Gecko2Chat.model.websocket.incoming.FriendRequestReceivedEvent;
 import com.dominik.Gecko2Chat.model.websocket.incoming.MessageDeliveredEvent;
 import com.dominik.Gecko2Chat.model.websocket.incoming.MessageReadEvent;
@@ -69,8 +70,10 @@ public class WebSocketEventRouter {
             case ChatMessageEvent event -> messageRepository.incomingMessage(event);
             case MessageSentEvent event -> messageRepository.incomingMessageSent(event);
             case MessageDeliveredEvent event -> messageRepository.incomingMessageDelivered(event);
-            case MessageReadEvent messageReadEvent -> messageRepository.incomingMessageRead(messageReadEvent);
+            case MessageReadEvent event -> messageRepository.incomingMessageRead(event);
             case FriendRequestReceivedEvent event -> friendRepository.incomingFriendRequest(event);
+            case FriendRequestAcceptedEvent event -> friendRepository.incomingFriendRequestAccepted(event);
+
         }
     }
 

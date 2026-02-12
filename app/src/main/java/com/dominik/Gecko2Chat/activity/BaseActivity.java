@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide;
 import com.dominik.Gecko2Chat.database.AppDatabase;
 import com.dominik.Gecko2Chat.model.api.KeycloakApi;
 import com.dominik.Gecko2Chat.utils.AuthStateManager;
@@ -92,8 +93,9 @@ public abstract class BaseActivity extends AppCompatActivity {
 
         state.performActionWithFreshTokens(authService, (accessToken, idToken, ex) -> {
             if (ex != null) {
+                boolean isNetworkError = ex.code == 0;
                 // This block runs if the Refresh Token is expired or revoked.
-                Log.e("BaseActivity", "Session expired (Refresh token failed). Logging out.", ex);
+                Log.e("BaseActivity", "Auth check failed.", ex);
                 performLogout();
                 return;
             }
@@ -125,7 +127,12 @@ public abstract class BaseActivity extends AppCompatActivity {
         authStateManager.clearAuthState();
 
         try( ExecutorService executor = Executors.newSingleThreadExecutor() ) {
-            executor.execute(() -> AppDatabase.getInstance(this).clearAllTables());
+            executor.execute(() -> {
+                AppDatabase.getInstance(this).clearAllTables();
+
+                //clear Glide Disk Cache
+                Glide.get(getApplicationContext()).clearDiskCache();
+            });
         }
 
         Intent intent = new Intent(this, LoginActivity.class);

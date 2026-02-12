@@ -10,6 +10,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.CircleCrop;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.model.FriendRequestModel;
 import com.google.android.material.button.MaterialButton;
@@ -59,7 +61,17 @@ public class FriendRequestAdapter extends RecyclerView.Adapter<FriendRequestAdap
         holder.btnAccept.setOnClickListener(v -> listener.onClick(friendRequest, true));
         holder.btnDecline.setOnClickListener(v -> listener.onClick(friendRequest, false));
 
-        //TODO set avatar image here
+        String avatarUrl = friendRequest.profileImageUrl();
+
+
+        if (avatarUrl != null && !avatarUrl.isEmpty()) {
+            Glide.with(holder.itemView.getContext())
+                    .load(avatarUrl.contains("null") ? R.drawable.person_icon : avatarUrl)
+                    .placeholder(R.drawable.person_icon)
+                    .error(R.drawable.person_icon)
+                    .transform(new CircleCrop())
+                    .into(holder.ivAvatar);
+        }
     }
 
     @Override

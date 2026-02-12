@@ -213,6 +213,8 @@ public class MainRepository {
         compositeDisposable.add(d);
     }
 
+
+
     public LiveData<List<FriendEntity>> getFriends() {
         return friendDao.getAllFriends();
     }

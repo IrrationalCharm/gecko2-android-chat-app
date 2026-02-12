@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.model.ContactModel;
 
@@ -45,6 +46,13 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
         holder.tvName.setText(contact.displayName());
         holder.tvLastSeen.setText(contact.lastSeen());
         holder.clItemContact.setOnClickListener(v -> listener.onItemClick(contact));
+
+        Glide.with(holder.itemView.getContext())
+                .load(contact.avatarUrl().contains("null") ? R.drawable.person_icon : contact.avatarUrl())
+                .placeholder(R.drawable.person_icon)
+                .error(R.drawable.person_icon)
+                .circleCrop()
+                .into(holder.ivAvatar);
     }
 
     @Override
