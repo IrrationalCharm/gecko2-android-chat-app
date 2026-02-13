@@ -4,133 +4,206 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:fitsSystemWindows="true"
     android:layout_height="match_parent"
-    android:background="@color/surface_dark">
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/toolbarLayout"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/surface_dark"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <ImageView
-            android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:padding="8dp"
-            android:src="@dra2able/ic_arrow_back_24"
-            app:tint="@color/green_accent"
-            android:layout_marginStart="8dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
-
-        <androidx.cardview.widget.CardView
-            android:id="@+id/cvChatAvatar"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginStart="8dp"
-            app:cardCornerRadius="18dp"
-            app:cardBackgroundColor="@color/green_faded"
-            app:layout_constraintStart_toEndOf="@id/btnBack"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
-
-            <ImageView
-                android:id="@+id/ivChatAvatar"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/person_icon"
-                android:scaleType="centerCrop"/>
-        </androidx.cardview.widget.CardView>
-
-        <TextView
-            android:id="@+id/tvChatName"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:text="Username"
-            android:textColor="@color/text_primary"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toEndOf="@id/cvChatAvatar"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/tvChatStatus"
-            app:layout_constraintVertical_chainStyle="packed"/>
-
-        <TextView
-            android:id="@+id/tvChatStatus"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:text="Online"
-            android:textColor="@color/green_accent"
-            android:textSize="12sp"
-            app:layout_constraintStart_toEndOf="@id/cvChatAvatar"
-            app:layout_constraintTop_toBottomOf="@id/tvChatName"
-            app:layout_constraintBottom_toBottomOf="parent"/>
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    android:background="@color/background_dark">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvChatMessages"
         android:layout_width="match_parent"
-        android:background="@color/background_dark"
-        android:layout_height="0dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
+        android:layout_height="match_parent"
         android:clipToPadding="false"
-        app:layout_constraintTop_toBottomOf="@id/toolbarLayout"
-        app:layout_constraintBottom_toTopOf="@id/layoutInput"
+        android:paddingTop="90dp"
+        android:paddingBottom="100dp"
         tools:listitem="@layout/item_message_sent"/>
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/layoutInput"
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/topBarContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/surface_dark"
-        android:padding="8dp"
-        app:layout_constraintBottom_toBottomOf="parent">
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="40dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="1.5dp"
+        app:strokeColor="#33FFFFFF"
+        app:cardBackgroundColor="@android:color/transparent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <EditText
-            android:id="@+id/etMessageInput"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_chat_input"
-            android:hint="Type a message..."
-            android:textColorHint="@color/text_secondary"
-            android:textColor="@color/text_primary"
-            android:padding="12dp"
-            android:maxLines="4"
-            android:inputType="textCapSentences|textMultiLine"
-            android:layout_marginEnd="8dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/btnSend"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+        <eightbitlab.com.blurview.BlurView
+            android:id="@+id/blurViewTop"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
-        <androidx.cardview.widget.CardView
-            android:id="@+id/btnSend"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            app:cardCornerRadius="24dp"
-            app:cardBackgroundColor="@color/green_accent"
-            app:cardElevation="2dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="60dp"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp">
+
+                <ImageView
+                    android:id="@+id/btnBack"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_arrow_back_24"
+                    app:tint="@color/green_accent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cvChatAvatar"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="8dp"
+                    app:cardCornerRadius="20dp"
+                    app:cardBackgroundColor="@color/green_faded"
+                    app:cardElevation="0dp"
+                    app:layout_constraintStart_toEndOf="@id/btnBack"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent">
+
+                    <ImageView
+                        android:id="@+id/ivChatAvatar"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/person_icon"
+                        android:scaleType="centerCrop"/>
+                </androidx.cardview.widget.CardView>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:orientation="vertical"
+                    android:gravity="center_vertical"
+                    app:layout_constraintStart_toEndOf="@id/cvChatAvatar"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent">
+
+                    <TextView
+                        android:id="@+id/tvChatName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Username"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/tvChatStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Online"
+                        android:textColor="@color/green_accent"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </eightbitlab.com.blurview.BlurView>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/attachContainer"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="25dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="1.5dp"
+        app:strokeColor="#33FFFFFF"
+        app:cardBackgroundColor="@android:color/transparent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <eightbitlab.com.blurview.BlurView
+            android:id="@+id/blurViewAttach"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
             <ImageView
+                android:id="@+id/btnAttach"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/ic_send_24"
                 android:padding="12dp"
-                app:tint="@color/background_dark" />
-        </androidx.cardview.widget.CardView>
+                android:src="@drawable/ic_add_photo"
+                app:tint="@color/text_primary"
+                android:scaleType="centerInside"/>
+        </eightbitlab.com.blurview.BlurView>
+    </com.google.android.material.card.MaterialCardView>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/inputContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="25dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="1.5dp"
+        app:strokeColor="#33FFFFFF"
+        app:cardBackgroundColor="@android:color/transparent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/attachContainer"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <eightbitlab.com.blurview.BlurView
+            android:id="@+id/blurViewInput"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="50dp">
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/btnSendContainer"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    app:cardCornerRadius="20dp"
+                    app:cardBackgroundColor="@color/green_accent"
+                    app:cardElevation="0dp"
+                    android:layout_marginEnd="5dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <ImageView
+                        android:id="@+id/btnSend"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/ic_send_24"
+                        android:padding="10dp"
+                        app:tint="@color/background_dark" />
+                </androidx.cardview.widget.CardView>
+
+                <EditText
+                    android:id="@+id/etMessageInput"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:hint="Message..."
+                    android:textColorHint="@color/text_secondary"
+                    android:textColor="@color/text_primary"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="8dp"
+                    android:paddingVertical="14dp"
+                    android:maxLines="4"
+                    android:inputType="textCapSentences|textMultiLine"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/btnSendContainer"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </eightbitlab.com.blurview.BlurView>
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

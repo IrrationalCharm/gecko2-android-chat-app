@@ -1,12 +1,17 @@
 package com.dominik.Gecko2Chat.activity.message_activity;
 
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -20,6 +25,9 @@ import com.dominik.Gecko2Chat.utils.UserManager;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.dominik.Gecko2Chat.viewmodel.MessageViewModel;
 
+import eightbitlab.com.blurview.BlurView;
+import eightbitlab.com.blurview.RenderEffectBlur;
+
 
 public class MessageActivity extends BaseActivity {
 
@@ -28,8 +36,8 @@ public class MessageActivity extends BaseActivity {
     private RecyclerView rvChatMessages;
     private MessageAdapter adapter;
     private EditText etMessageInput;
-    private ImageView btnBack, ivChatAvatar;
-    private CardView btnSend;
+    private ImageView btnBack, ivChatAvatar, btnAttach;
+    private View btnSend;
     private String friendId, friendName, friendAvatarUrl;
     private TextView tvChatStatus;
     private MessageViewModel messageViewModel;
@@ -39,6 +47,7 @@ public class MessageActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+
 
         myId = UserManager.getInstance(this).getUser().internalId();
         friendId = getIntent().getStringExtra("FRIEND_ID");
@@ -131,10 +140,16 @@ public class MessageActivity extends BaseActivity {
     private void initViews() {
         ((TextView) findViewById(R.id.tvChatName)).setText(friendName);
         etMessageInput = findViewById(R.id.etMessageInput);
-        btnSend = findViewById(R.id.btnSend);
+
+        btnSend = findViewById(R.id.btnSendContainer);
+
         btnBack = findViewById(R.id.btnBack);
+        btnAttach = findViewById(R.id.btnAttach);
+
         tvChatStatus = findViewById(R.id.tvChatStatus);
         ivChatAvatar = findViewById(R.id.ivChatAvatar);
+
+
 
         if (friendAvatarUrl != null && !friendAvatarUrl.isEmpty()) {
             Glide.with(this)
@@ -152,9 +167,38 @@ public class MessageActivity extends BaseActivity {
 
         adapter = new MessageAdapter(myId);
         rvChatMessages.setAdapter(adapter);
+
+        setupBlurViews();
     }
 
+    private void setupBlurViews() {
+        float radius = 10f; // Increased blur for better liquid effect
+        int glassColor = 0x501E1E1E; // ~30% opacity dark grey
 
+        View decorView = getWindow().getDecorView();
+        ViewGroup rootView = (ViewGroup) decorView.findViewById(android.R.id.content);
+        Drawable windowBackground = decorView.getBackground();
+
+        // 1. Top Bar
+        BlurView topBlur = findViewById(R.id.blurViewTop);
+        // 2. Attach Bubble (Left Circle)
+        BlurView attachBlur = findViewById(R.id.blurViewAttach);
+        // 3. Input Bubble (Right Pill)
+        BlurView inputBlur = findViewById(R.id.blurViewInput);
+
+        // Helper function (or just repeat the setup 3 times)
+        setupSingleBlur(topBlur, rootView, windowBackground, radius, glassColor);
+        setupSingleBlur(attachBlur, rootView, windowBackground, radius, glassColor);
+        setupSingleBlur(inputBlur, rootView, windowBackground, radius, glassColor);
+    }
+
+    private void setupSingleBlur(BlurView view, ViewGroup root, Drawable bg, float radius, int color) {
+        if (view == null) return;
+        view.setupWith(root, new RenderEffectBlur()) // Ensure API compatibility if needed
+                .setFrameClearDrawable(bg)
+                .setBlurRadius(radius)
+                .setOverlayColor(color);
+    }
 
     private void sendMessage() {
         String content = etMessageInput.getText().toString().trim();

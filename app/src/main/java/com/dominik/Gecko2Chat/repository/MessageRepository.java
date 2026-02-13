@@ -177,7 +177,7 @@ public class MessageRepository {
 
         executor.execute(() -> {
             MessageEntity messageEntity = ConversationUtils.mapChatMessageDtoToMessageEntity(message);
-            conversationDao.upsertConversation(messageEntity.conversationId, messageEntity.recipientId, messageEntity.content, messageEntity.timestamp, messageEntity.senderId, 1);
+            conversationDao.upsertConversation(messageEntity.conversationId, messageEntity.recipientId, messageEntity.content, messageEntity.timestamp, messageEntity.senderId, 0);
             messageDao.insertMessage(messageEntity);
         });
     }
