@@ -22,7 +22,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:padding="8dp"
-            android:src="@drawable/ic_arrow_back_24"
+            android:src="@dra2able/ic_arrow_back_24"
             app:tint="@color/green_accent"
             android:layout_marginStart="8dp"
             app:layout_constraintStart_toStartOf="parent"

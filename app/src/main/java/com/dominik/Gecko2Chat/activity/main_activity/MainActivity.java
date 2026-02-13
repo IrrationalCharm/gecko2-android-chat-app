@@ -1,7 +1,12 @@
 package com.dominik.Gecko2Chat.activity.main_activity;
 
 
+import android.animation.ObjectAnimator;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.CycleInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -19,6 +24,9 @@ import com.dominik.Gecko2Chat.activity.main_activity.fragments.ContactsFragment;
 import com.dominik.Gecko2Chat.activity.main_activity.fragments.ProfileFragment;
 import com.dominik.Gecko2Chat.viewmodel.MainViewModel;
 
+import eightbitlab.com.blurview.BlurView;
+import eightbitlab.com.blurview.RenderEffectBlur;
+import eightbitlab.com.blurview.RenderScriptBlur;
 
 
 public class MainActivity extends BaseActivity {
@@ -72,17 +80,23 @@ public class MainActivity extends BaseActivity {
                 activateTextView(tvChats, colorGreen);
                 iconChats.setAlpha(1f);
                 iconChats.setColorFilter(colorGreen);
+
+                wiggleIcon(iconChats);
                 break;
 
             case CONTACTS:
                 activateTextView(tvContacts, colorGreen);
                 iconContacts.setAlpha(1f);
                 iconContacts.setColorFilter(colorGreen);
+
+                wiggleIcon(iconContacts);
                 break;
 
             case PROFILE:
                 imgProfileAvatar.setAlpha(1f);
                 activateTextView(tvProfileText, colorGreen);
+
+                bounceIcon(imgProfileAvatar);
                 break;
         }
     }
@@ -131,6 +145,27 @@ public class MainActivity extends BaseActivity {
         iconChats = findViewById(R.id.iconChats);
         iconContacts = findViewById(R.id.iconContacts);
 
+        BlurView blurView = findViewById(R.id.blurView);
+        float radius = 5f; // Blur strength (1-25)
+
+        // Get the root view to blur (the content behind the nav bar)
+        View decorView = getWindow().getDecorView();
+        ViewGroup rootView = (ViewGroup) decorView.findViewById(android.R.id.content);
+
+        // Get the window background (helps prevent graphical glitches)
+        Drawable windowBackground = decorView.getBackground();
+
+        blurView.setupWith(rootView, new RenderEffectBlur()) // or RenderEffectBlur on API 31+
+                .setFrameClearDrawable(windowBackground)
+                .setBlurRadius(radius);
+
+        // 3. The "Liquid" Tint
+        // Your previous color (0xCC...) was too dark/solid.
+        // Use a much lower Alpha (Hex: 30 to 60) so the background colors bleed through.
+        // Format: 0x[Alpha][Red][Green][Blue]
+        int glassColor = 0x501E1E1E; // ~30% opacity dark grey
+        blurView.setOverlayColor(glassColor);
+
         viewModel.getCurrentUser().observe(this, user -> {
             String avatarUrl = user.profileImageUrl();
             Glide.with(this)
@@ -142,6 +177,31 @@ public class MainActivity extends BaseActivity {
         });
 
 
+    }
+
+    private void wiggleIcon(View view) {
+        // Rotate from 0 to 15 degrees
+        ObjectAnimator animator = ObjectAnimator.ofFloat(view, "rotation", 0f, 15f);
+
+        // Duration: 500ms (half a second)
+        animator.setDuration(600);
+
+        // CycleInterpolator(4) means it will go back and forth 4 times
+        // This creates the "shake" or "wiggle" effect: 0 -> 15 -> -15 -> 15 -> 0
+        animator.setInterpolator(new CycleInterpolator(1f));
+
+        animator.start();
+    }
+
+    private void bounceIcon(View view) {
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(view, "scaleX", 1f, 1.2f, 1f);
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(view, "scaleY", 1f, 1.2f, 1f);
+
+        scaleX.setDuration(500);
+        scaleY.setDuration(500);
+
+        scaleX.start();
+        scaleY.start();
     }
 
 

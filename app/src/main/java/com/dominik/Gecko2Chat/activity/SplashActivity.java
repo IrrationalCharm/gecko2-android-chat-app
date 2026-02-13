@@ -76,7 +76,7 @@ public class SplashActivity extends AppCompatActivity {
 
         //state.setNeedsTokenRefresh(true);
 
-        // 2. Try to get a FRESH token (Auto-refreshes if needed)
+        //Try to get a FRESH token (Auto-refreshes if needed)
         state.performActionWithFreshTokens(authService, (accessToken, idToken, ex) -> {
             if (ex != null) {
                 // Refresh failed

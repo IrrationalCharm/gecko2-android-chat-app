@@ -129,4 +129,5 @@
     <string name="chats">Chats</string>
     <string name="online">Online</string>
     <string name="waiting_for_network">Waiting for network…</string>
+    <string name="no_chats">No chats\n</string>
 </resources>

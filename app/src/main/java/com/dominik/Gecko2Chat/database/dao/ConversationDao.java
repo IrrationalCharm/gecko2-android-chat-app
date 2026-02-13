@@ -19,13 +19,29 @@ public interface ConversationDao {
 
     // Call this when a new message arrives
     @Query("""
-        UPDATE conversations SET lastMessageContent =:message,
-         lastMessageTimestamp = :timestamp,
-         lastMessageSenderId = :senderId,
-         unreadCount = unreadCount + :increment
-        WHERE conversationId = :conversationId
+        INSERT INTO conversations (
+            conversationId,
+            otherUserId,
+            lastMessageContent,
+            lastMessageTimestamp,
+            lastMessageSenderId,
+            unreadCount
+        )
+        VALUES (:conversationId, :otherUserId, :message, :timestamp, :senderId, :increment)
+        ON CONFLICT(conversationId) DO UPDATE SET
+            lastMessageContent = :message,
+            lastMessageTimestamp = :timestamp,
+            lastMessageSenderId = :senderId,
+            unreadCount = conversations.unreadCount + :increment
     """)
-    void updateConversation(String conversationId, String message, Instant timestamp, String senderId, int increment);
+    void upsertConversation(
+            String conversationId,
+            String otherUserId, // <--- ADDED THIS
+            String message,
+            Instant timestamp,
+            String senderId,
+            int increment
+    );
 
     @Query("UPDATE conversations SET unreadCount = 0 WHERE conversationId = :conversationId")
     void markConversationAsRead(String conversationId);

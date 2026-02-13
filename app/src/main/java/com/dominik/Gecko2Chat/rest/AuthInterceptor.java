@@ -70,12 +70,13 @@ public class AuthInterceptor implements Interceptor {
             return chain.proceed(originalRequest);
         }
 
-        // 2. CHECK IF EXPIRED (or close to expiring)
+        //CHECK IF EXPIRED (or close to expiring)
         if (state.getNeedsTokenRefresh()) {
             String freshToken = refreshAccessTokenSync(state);
 
             if (freshToken != null) {
                 // Refresh success! Use new token
+                Log.d("AuthInterceptor", "Token refreshed");
                 return chain.proceed(addAuthorizationHeader(originalRequest, freshToken));
             } else {
                 Log.e("AuthInterceptor", "Token refresh failed. Redirecting to login");

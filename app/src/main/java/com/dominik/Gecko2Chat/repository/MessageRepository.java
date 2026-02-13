@@ -77,7 +77,7 @@ public class MessageRepository {
         executor.execute(() -> {
             messageDao.insertMessage(mEntity);
             int increment = isChatOpen ? 0 : 1;
-            conversationDao.updateConversation(mEntity.conversationId, mEntity.content, mEntity.timestamp, mEntity.senderId, increment);
+            conversationDao.upsertConversation(mEntity.conversationId, mEntity.senderId, mEntity.content, mEntity.timestamp, mEntity.senderId, increment);
 
             //If the user is in the same chat, mark message status as read, otherwise mark as delivered
             if (status == MessageStatus.READ) {
@@ -177,7 +177,7 @@ public class MessageRepository {
 
         executor.execute(() -> {
             MessageEntity messageEntity = ConversationUtils.mapChatMessageDtoToMessageEntity(message);
-            conversationDao.updateConversation(messageEntity.conversationId, messageEntity.content, messageEntity.timestamp, messageEntity.senderId, 0);
+            conversationDao.upsertConversation(messageEntity.conversationId, messageEntity.recipientId, messageEntity.content, messageEntity.timestamp, messageEntity.senderId, 1);
             messageDao.insertMessage(messageEntity);
         });
     }

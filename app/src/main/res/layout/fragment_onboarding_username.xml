@@ -22,7 +22,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Hey! Welcome to Gecko"
-            android:textColor="@color/white"
+            android:textColor="@color/text_primary"
             android:textSize="32sp"
             android:textStyle="bold"
             android:gravity="center"
@@ -32,7 +32,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="This is how others will find you. \nMake it unique!"
-            android:textColor="#E0F2F1"
+            android:textColor="@color/text_secondary"
             android:textSize="18sp"
             android:gravity="center"
             android:lineSpacingExtra="4dp"/>
@@ -43,7 +43,6 @@
         android:id="@+id/input_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_white_rounded_card"
         android:padding="15dp"
         android:orientation="vertical"
         app:layout_constraintVertical_bias="0.55"
@@ -56,26 +55,28 @@
             android:id="@+id/til_username"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/choose_a_nickname"
-            app:boxBackgroundColor="#F5F5F5"
-            app:boxCornerRadiusTopStart="12dp"
-            app:boxCornerRadiusTopEnd="12dp"
-            app:boxCornerRadiusBottomStart="12dp"
-            app:boxCornerRadiusBottomEnd="12dp"
+            app:hintEnabled="false"
             app:boxStrokeWidth="0dp"
+            app:boxStrokeWidthFocused="0dp"
             app:errorEnabled="true"
             app:helperText=""
-            app:helperTextTextColor="@color/helper_text_color"
-            app:endIconMode="clear_text">
+            app:helperTextTextColor="@color/green_accent"
+            android:background="@android:color/transparent">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_username"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="60dp"
+                android:background="@drawable/selector_input_border"
+                android:theme="@style/GreenCursorEditText"
+                android:hint="@string/choose_a_nickname"
+                android:paddingHorizontal="24dp"
                 android:inputType="textNoSuggestions"
                 android:maxLines="1"
-                android:textColor="#1F1F1F"
-                android:textSize="18sp"/>
+                android:singleLine="true"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:textSize="16sp"/>
         </com.google.android.material.textfield.TextInputLayout>
 
     </LinearLayout>
@@ -86,7 +87,8 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:text="By continuing, I confirm I am over 13 and accept the Terms of Service and Privacy Policy."
-        android:textColor="#CCFFFFFF"
+        android:textColor="@color/text_secondary"
+        android:alpha="0.6"
         android:textSize="13sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"

@@ -46,7 +46,8 @@
             android:exported="false" />
         <activity
             android:name=".activity.onBoarding.OnboardingActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".activity.SplashActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"

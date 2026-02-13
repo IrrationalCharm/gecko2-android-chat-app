@@ -45,7 +45,7 @@ dependencies {
     implementation(libs.rxandroid)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-
+    implementation(libs.blurview)
     implementation(libs.tink.android)
 
     implementation(libs.glide)

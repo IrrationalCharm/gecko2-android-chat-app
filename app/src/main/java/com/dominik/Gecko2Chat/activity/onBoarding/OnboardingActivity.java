@@ -1,35 +1,25 @@
 package com.dominik.Gecko2Chat.activity.onBoarding;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.widget.ViewPager2;
+
 import com.dominik.Gecko2Chat.R;
+import com.dominik.Gecko2Chat.activity.add_friend_activity.UiState;
 import com.dominik.Gecko2Chat.activity.main_activity.MainActivity;
 import com.dominik.Gecko2Chat.activity.onBoarding.fragments.DisplayNameFragment;
 import com.dominik.Gecko2Chat.activity.onBoarding.fragments.OnBoardingAdapter;
 import com.dominik.Gecko2Chat.activity.onBoarding.fragments.OnboardingStep;
 import com.dominik.Gecko2Chat.activity.onBoarding.fragments.ProfilePictureFragment;
 import com.dominik.Gecko2Chat.activity.onBoarding.fragments.UsernameFragment;
-import com.dominik.Gecko2Chat.model.OnBoardingRequestDto;
-import com.dominik.Gecko2Chat.model.api.ApiResponse;
-import com.dominik.Gecko2Chat.model.api.RegistrationApi;
-import com.dominik.Gecko2Chat.model.api.UserApi;
-import com.dominik.Gecko2Chat.model.response.UserDto;
-import com.dominik.Gecko2Chat.rest.RestClient;
-import com.dominik.Gecko2Chat.utils.ImageUploadUtils;
+import com.dominik.Gecko2Chat.viewmodel.OnboardingViewModel;
 import com.google.android.material.button.MaterialButton;
-
-import okhttp3.MultipartBody;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class OnboardingActivity extends AppCompatActivity {
 
@@ -37,17 +27,20 @@ public class OnboardingActivity extends AppCompatActivity {
     private MaterialButton btnNext;
     private LinearLayout dotsContainer;
     private OnBoardingAdapter adapter;
+    private OnboardingViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.onboarding_activity);
 
+        viewModel = new ViewModelProvider(this).get(OnboardingViewModel.class);
+
         initViews();
         setupViewPager();
         setupListeners();
+        observeViewModel();
 
-        // Initialize the first dot as active
         updateIndicators(0);
     }
 
@@ -60,192 +53,98 @@ public class OnboardingActivity extends AppCompatActivity {
     private void setupViewPager() {
         adapter = new OnBoardingAdapter(this);
         viewPager.setAdapter(adapter);
+
+        viewPager.setPageTransformer((page, position) -> {
+            float absPos = Math.abs(position);
+            page.setAlpha(1f - absPos);
+            page.setScaleY(0.85f + (0.15f * (1f - absPos)));
+            page.setScaleX(0.85f + (0.15f * (1f - absPos)));
+        });
     }
 
     private void setupListeners() {
-        // NEXT Button
-        btnNext.setOnClickListener(v -> {
-            int current = viewPager.getCurrentItem();
-            OnboardingStep fragment = adapter.getFragment(current);
+        btnNext.setOnClickListener(v -> handleNextClick());
 
-            // Check if Fragment data is valid
-            if (fragment != null && fragment.isDataValid()) {
-                if (current < adapter.getItemCount() - 1) {
-                    viewPager.setCurrentItem(current + 1);
-                } else {
-                    finishOnboarding();
-                }
-            }
-        });
-
-        // PAGE CHANGE LISTENER (Updates Dots & Buttons)
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
-                super.onPageSelected(position);
                 updateIndicators(position);
-                updateButtons(position);
+                btnNext.setText(position == adapter.getItemCount() - 1 ? "Finish" : "Next");
             }
         });
     }
 
-    // --- HELPER TO UPDATE THE MANUAL DOTS ---
-    private void updateIndicators(int position) {
-        for (int i = 0; i < dotsContainer.getChildCount(); i++) {
-            View dot = dotsContainer.getChildAt(i);
-
-            dot.setSelected(i == position);
-
-            float scale = (i == position) ? 1.2f : 1.0f;
-            dot.animate().scaleX(scale).scaleY(scale).setDuration(200).start();
-        }
+    private void observeViewModel() {
+        viewModel.getUiState().observe(this, state -> {
+            if (state instanceof UiState.Loading) {
+                setLoading(true);
+            } else if (state instanceof UiState.Success) {
+                setLoading(false);
+                Toast.makeText(this, "Setup Complete!", Toast.LENGTH_SHORT).show();
+                goToMainActivity();
+            } else if (state instanceof UiState.Error) {
+                setLoading(false);
+                Toast.makeText(this, ((UiState.Error) state).message, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
+    private void handleNextClick() {
+        int current = viewPager.getCurrentItem();
+        OnboardingStep currentFragment = adapter.getFragment(current);
 
-    private void updateButtons(int position) {
-        // Next Button Text
-        if (position == adapter.getItemCount() - 1) {
-            btnNext.setText("Finish");
-            //btnNext.setIconResource(R.drawable.ic_check);
+        // 1. Validate current step
+        if (currentFragment == null || !currentFragment.isDataValid()) {
+            return; // Fragment handles showing its own error
+        }
+
+        // 2. Move next or Finish
+        if (current < adapter.getItemCount() - 1) {
+            viewPager.setCurrentItem(current + 1);
         } else {
-            btnNext.setText("Next");
-            //btnNext.setIconResource(R.drawable.ic_arrow_forward);
+            collectDataAndSubmit();
         }
     }
 
-    private void finishOnboarding() {
-        showLoading(true);
+    private void collectDataAndSubmit() {
         String username = null;
         String displayName = null;
         String profileImageUri = null;
 
-
-        //Loop through all fragments and check if data is valid
+        // Extract data from all fragments
         for (int i = 0; i < adapter.getItemCount(); i++) {
             OnboardingStep fragment = adapter.getFragment(i);
 
-            switch(fragment) { //Pattern matching Java 21
-                case UsernameFragment usernameFragment:
-                    if (!usernameFragment.isDataValid()) {
-                        handleValidationError(i, "Username is not valid");
-                        return;
-                    }
-                    username = usernameFragment.getData();
-                    break;
-
-                case DisplayNameFragment displayNameFragment:
-                    if (!displayNameFragment.isDataValid()) {
-                        handleValidationError(i, "Display name is not valid");
-                        return;
-                    }
-                    displayName = displayNameFragment.getData();
-                    break;
-
-                case ProfilePictureFragment profilePictureFragment:
-                    profileImageUri = profilePictureFragment.getData();
-                    break;
-
-                default:
-                    throw new IllegalStateException("Unexpected value: " + fragment);
+            switch (fragment) {
+                case UsernameFragment f -> username = f.getData();
+                case DisplayNameFragment f -> displayName = f.getData();
+                case ProfilePictureFragment f -> profileImageUri = f.getData();
+                case null, default -> {}
             }
         }
 
-        // All data is valid at this point, sending request.
-        RegistrationApi registrationApi = RestClient.getInstance(this).getRegistrationApi();
-
-        var OnBoardingRequestDto = new OnBoardingRequestDto(username, displayName, null, null, null);
-        String finalProfileImageUri = profileImageUri; // To use inside call
-
-        registrationApi.registerUser(OnBoardingRequestDto).enqueue(new Callback<ApiResponse<UserDto>>() {
-           @Override
-           public void onResponse(Call<ApiResponse<UserDto>> call, Response<ApiResponse<UserDto>> response) {
-               if (response.isSuccessful() && response.body() != null) {
-                   if (finalProfileImageUri != null && finalProfileImageUri.isEmpty())
-                       uploadProfilePicture(finalProfileImageUri);
-
-                   Toast.makeText(OnboardingActivity.this, "Setup Complete!", Toast.LENGTH_SHORT).show();
-                   goToMainActivity();
-               } else {
-                   Log.e("OnboardingActivity", "Onboarding failed, response body is null");
-                   Toast.makeText(OnboardingActivity.this, "Onboarding failed, please try again", Toast.LENGTH_SHORT).show();
-               }
-               showLoading(false);
-           }
-
-           @Override
-           public void onFailure(Call<ApiResponse<UserDto>> call, Throwable t) {
-                showLoading(false);
-                Log.e("OnboardingActivity", "Onboarding failed, network error", t);
-                Toast.makeText(OnboardingActivity.this, "Onboarding failed, please try again", Toast.LENGTH_SHORT).show();
-           }
-        });
-
-
-
-        // startActivity(new Intent(this, MainActivity.class));
-        // finish();
+        viewModel.submitOnboardingData(username, displayName, profileImageUri);
     }
 
     private void goToMainActivity() {
-        showLoading(false);
-        startActivity(new Intent(this, MainActivity.class).putExtra("justOnboarded", true));
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("justOnboarded", true);
+        startActivity(intent);
         finish();
     }
 
-    private void uploadProfilePicture(String finalProfileImageUri) {
-        if (finalProfileImageUri == null || finalProfileImageUri.isEmpty()) {
-            goToMainActivity();
-            return;
-        }
-
-        Uri fileUri = Uri.parse(finalProfileImageUri);
-
-        // 1. Prepare the file part using your existing utility
-        // "image" must match the @RequestPart name in Spring Boot
-        MultipartBody.Part body = ImageUploadUtils.prepareImagePart(this, "image", fileUri);
-
-        if (body == null) {
-            Toast.makeText(this, "Failed to process image file", Toast.LENGTH_SHORT).show();
-            goToMainActivity();
-            return;
-        }
-
-        // 2. Get the API instance
-        UserApi userApi = RestClient.getInstance(this).getUserApi();
-
-        // 3. Make the call
-        userApi.uploadAvatar(body).enqueue(new Callback<ApiResponse<String>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<String>> call, Response<ApiResponse<String>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    String imageUrl = response.body().data();
-                    Log.d("Onboarding", "Image uploaded successfully: " + imageUrl);
-                    // Ideally, update local user cache here if needed,
-                    // but your app will likely fetch fresh data on startup anyway.
-                } else {
-                    Log.e("Onboarding", "Upload failed: " + response.code());
-                    Toast.makeText(OnboardingActivity.this, "Failed to upload image", Toast.LENGTH_SHORT).show();
-                }
-                // Navigate regardless of image success/failure to not block the user
-                goToMainActivity();
-            }
-
-            @Override
-            public void onFailure(Call<ApiResponse<String>> call, Throwable t) {
-                Log.e("Onboarding", "Upload error", t);
-                goToMainActivity();
-            }
-        });
-    }
-
-    private void handleValidationError(int index, String errorMessage) {
-        Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
-        showLoading(false);
-        viewPager.setCurrentItem(index);
-    }
-
-    private void showLoading(boolean isLoading) {
+    private void setLoading(boolean isLoading) {
         btnNext.setEnabled(!isLoading);
         btnNext.setText(isLoading ? "Loading..." : "Finish");
+        viewPager.setUserInputEnabled(!isLoading); // Disable swipe while loading
+    }
+
+    private void updateIndicators(int position) {
+        for (int i = 0; i < dotsContainer.getChildCount(); i++) {
+            View dot = dotsContainer.getChildAt(i);
+            dot.setSelected(i == position);
+            float scale = (i == position) ? 1.2f : 1.0f;
+            dot.animate().scaleX(scale).scaleY(scale).setDuration(200).start();
+        }
     }
 }
