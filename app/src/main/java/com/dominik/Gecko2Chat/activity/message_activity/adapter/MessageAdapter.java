@@ -15,15 +15,21 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.model.MessageModel;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
+
     private static final int TYPE_SENT_TEXT = 1;
     private static final int TYPE_RECEIVED_TEXT = 2;
     private final List<MessageModel> messageList;
     private final String currentUserId;
 
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault());
 
     public MessageAdapter( String currentUserId) {
         this.messageList = new ArrayList<>();
@@ -102,6 +108,16 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return messageList.size();
     }
 
+    public MessageModel getMessage(int position) {
+        return messageList.get(position);
+    }
+
+
+    private static String formatTime(Instant instant) {
+        return instant.atZone(ZoneId.systemDefault())
+                .format(TIME_FORMATTER);
+    }
+
     static class SentMessageViewHolder extends RecyclerView.ViewHolder {
         TextView tvMessageTime, tvMessageContent;
         ImageView ivMessageStatus;
@@ -125,13 +141,13 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     tvMessageTime.setVisibility(View.VISIBLE);
                     ivMessageStatus.setImageResource(R.drawable.ic_tick);
                     ivMessageStatus.clearColorFilter();
-                    tvMessageTime.setText(message.timestamp().toString());
+                    tvMessageTime.setText(formatTime(message.timestamp()));
                 }
                 case DELIVERED -> {
                     tvMessageTime.setVisibility(View.VISIBLE);
                     ivMessageStatus.setImageResource(R.drawable.ic_double_tick);
                     ivMessageStatus.clearColorFilter();
-                    tvMessageTime.setText(message.timestamp().toString());
+                    tvMessageTime.setText(formatTime(message.timestamp()));
                 }
                 case READ -> {
                     tvMessageTime.setVisibility(View.VISIBLE);
@@ -140,13 +156,13 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                             ContextCompat.getColor(ivMessageStatus.getContext(), R.color.blue_read_receipt),
                             PorterDuff.Mode.SRC_IN
                     );
-                    tvMessageTime.setText(message.timestamp().toString());
+                    tvMessageTime.setText(formatTime(message.timestamp()));
                 }
                 case FAILED -> {
                 }
             };
 
-             //TODO: Format timestamp
+
 
         }
     }
@@ -162,7 +178,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
 
         void bind(MessageModel message) {
-            tvMessageTime.setText(message.timestamp().toString());
+            tvMessageTime.setText(formatTime(message.timestamp()));
             tvMessageContent.setText(message.content());
         }
     }

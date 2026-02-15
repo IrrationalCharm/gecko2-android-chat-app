@@ -14,12 +14,18 @@ import com.bumptech.glide.Glide;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.model.ChatModel;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder> {
 
     private List<ChatModel> chatList;
     private final OnChatClickListener listener;
+
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault());
 
     public interface OnChatClickListener {
         void onChatClick(ChatModel chat);
@@ -44,6 +50,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
         ChatModel chat = chatList.get(position);
         holder.tvName.setText(chat.name());
         holder.tvMessage.setText(chat.lastMessage());
+        holder.tvTimestamp.setText(formatTime(chat.timestamp()));
 
         if (chat.unreadCount() == 0) holder.cvUnreadBadge.setVisibility(View.GONE);
 
@@ -67,11 +74,16 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
         return chatList.size();
     }
 
+    private static String formatTime(Instant instant) {
+        return instant.atZone(ZoneId.systemDefault())
+                .format(TIME_FORMATTER);
+    }
+
     //Inner class the hold teh views
     public static class ChatViewHolder extends RecyclerView.ViewHolder {
         CardView cvUnreadBadge;
         ImageView imgAvatar;
-        TextView tvName, tvMessage, tvUnreadCount;
+        TextView tvName, tvMessage, tvUnreadCount, tvTimestamp;
         public ChatViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tvName);
@@ -79,6 +91,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
             tvUnreadCount = itemView.findViewById(R.id.tvUnreadCount);
             cvUnreadBadge = itemView.findViewById(R.id.cvUnreadBadge);
             imgAvatar = itemView.findViewById(R.id.imgAvatar);
+            tvTimestamp = itemView.findViewById(R.id.tvTimestamp);
         }
     }
 }

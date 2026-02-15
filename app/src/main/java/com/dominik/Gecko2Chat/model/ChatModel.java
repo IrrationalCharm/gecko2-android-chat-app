@@ -1,4 +1,6 @@
 package com.dominik.Gecko2Chat.model;
 
-public record ChatModel(String name, String friendId, String lastMessage, long unreadCount, String date, String avatar) {
+import java.time.Instant;
+
+public record ChatModel(String name, String friendId, String lastMessage, long unreadCount, Instant timestamp, String avatar) {
 }

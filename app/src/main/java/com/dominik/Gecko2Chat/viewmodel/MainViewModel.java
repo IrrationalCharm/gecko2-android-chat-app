@@ -131,7 +131,7 @@ public class MainViewModel extends AndroidViewModel {
 
             newUiList.removeIf(chatModel -> chatModel.friendId().equals(otherUserId));
 
-            newUiList.add(new ChatModel(name, otherUserId, conv.lastMessageContent, conv.unreadCount,conv.lastMessageTimestamp.toString(), avatar));
+            newUiList.add(new ChatModel(name, otherUserId, conv.lastMessageContent, conv.unreadCount,conv.lastMessageTimestamp, avatar));
         }
 
         chatList.setValue(newUiList);

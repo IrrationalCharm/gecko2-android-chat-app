@@ -21,9 +21,17 @@ import com.bumptech.glide.load.resource.bitmap.CircleCrop;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.activity.BaseActivity;
 import com.dominik.Gecko2Chat.activity.message_activity.adapter.MessageAdapter;
+import com.dominik.Gecko2Chat.model.MessageModel;
 import com.dominik.Gecko2Chat.utils.UserManager;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
 import com.dominik.Gecko2Chat.viewmodel.MessageViewModel;
+import com.google.android.material.card.MaterialCardView;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 import eightbitlab.com.blurview.BlurView;
 import eightbitlab.com.blurview.RenderEffectBlur;
@@ -33,13 +41,19 @@ public class MessageActivity extends BaseActivity {
 
     private String myId;
 
+    private String currentDateBadgeText = "";
+    private boolean isDateBadgeVisible = false;
+    private boolean isScrollButtonVisible = false;
+    private final float SWIPE_DISTANCE = 70f;
+    private MaterialCardView scrollToBottomContainer, dateBadgeContainer;
+
     private RecyclerView rvChatMessages;
     private MessageAdapter adapter;
     private EditText etMessageInput;
     private ImageView btnBack, ivChatAvatar, btnAttach;
     private View btnSend;
     private String friendId, friendName, friendAvatarUrl;
-    private TextView tvChatStatus;
+    private TextView tvChatStatus, tvDateBadge;
     private MessageViewModel messageViewModel;
 
 
@@ -73,10 +87,10 @@ public class MessageActivity extends BaseActivity {
     private void setupObservers() {
         //Populates recycle view of messages
         messageViewModel.getMessageList().observe(this, messages -> {
+            boolean wasAtBottom = isUserAtBottom();
+
             int oldSize = adapter.getItemCount();
             adapter.setMessages(messages);
-
-            boolean wasAtBottom = isUserAtBottom();
 
             if (adapter.getItemCount() > 0) {
                 if (oldSize == 0) {
@@ -85,7 +99,9 @@ public class MessageActivity extends BaseActivity {
                 } else if (messages.size() > oldSize) {
                     // ONLY scroll to bottom if the user was already there (i.e. new incoming message)
                     if (wasAtBottom) {
-                        rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
+                        rvChatMessages.post(() ->
+                                rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1)
+                        );
                     }
                 }
             }
@@ -106,17 +122,52 @@ public class MessageActivity extends BaseActivity {
     //If user scrolls up, it loads next page
     private void setupPaginationListener() {
         rvChatMessages.addOnScrollListener(new RecyclerView.OnScrollListener() {
+
+            // Handler to auto-hide the date badge after scrolling stops
+            private final android.os.Handler hideBadgeHandler = new android.os.Handler();
+            private final Runnable hideBadgeRunnable = () -> hideDateBadge();
+
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+
+                if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
+                    // User is actively scrolling: cancel the hide timer and show badge
+                    hideBadgeHandler.removeCallbacks(hideBadgeRunnable);
+                    showDateBadge();
+                } else if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    // User stopped scrolling: hide the badge after 1.5 seconds
+                    hideBadgeHandler.postDelayed(hideBadgeRunnable, 1500);
+                }
+            }
+
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
                 LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
-                if (layoutManager != null) {
+
+                if (layoutManager != null && adapter.getItemCount() > 0) {
+
                     int firstVisibleItem = layoutManager.findFirstVisibleItemPosition();
 
-                    // If user is near top (position 0) and scrolling up
-                    if (firstVisibleItem <= 1 && dy < 0) { // dy < 0 means scrolling up
+                    // 1. Pagination Check
+                    if (firstVisibleItem <= 1 && dy < 0) {
                         messageViewModel.loadNextPage(friendId);
+                    }
+
+                    // 2. Update the text of the Date Badge based on the top item
+                    updateDateBadge(firstVisibleItem);
+
+                    // 3. Scroll To Bottom Button Logic (Independent of Date Badge)
+                    int lastVisible = layoutManager.findLastVisibleItemPosition();
+                    int lastItem = adapter.getItemCount() - 1;
+                    int hiddenItemsBelow = lastItem - lastVisible;
+
+                    if (hiddenItemsBelow >= 4) {
+                        showScrollToBottomButton();
+                    } else {
+                        hideScrollToBottomButton();
                     }
                 }
             }
@@ -126,15 +177,18 @@ public class MessageActivity extends BaseActivity {
     //Determine if it should autoscroll
     private boolean isUserAtBottom() {
         LinearLayoutManager layoutManager = (LinearLayoutManager) rvChatMessages.getLayoutManager();
-        int pos = layoutManager.findLastCompletelyVisibleItemPosition();
-        int numItems = rvChatMessages.getAdapter().getItemCount();
-        return (pos >= numItems ); //-1
+
+        int lastVisible = layoutManager.findLastVisibleItemPosition();
+        int totalItems = adapter.getItemCount();
+
+        return lastVisible >= totalItems - 2;
     }
 
 
     private void initListeners() {
         btnBack.setOnClickListener(v -> finish());
         btnSend.setOnClickListener(v -> sendMessage());
+        scrollToBottomContainer.setOnClickListener(v -> rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1));
     }
 
     private void initViews() {
@@ -143,14 +197,24 @@ public class MessageActivity extends BaseActivity {
 
         btnSend = findViewById(R.id.btnSendContainer);
 
+        tvDateBadge = findViewById(R.id.tvDateBadge);
+        dateBadgeContainer = findViewById(R.id.dateBadgeContainer);
+        dateBadgeContainer.setVisibility(View.GONE);
+        dateBadgeContainer.setAlpha(0f); // Start completely transparent
+        dateBadgeContainer.setTranslationY(-SWIPE_DISTANCE);
+
+        scrollToBottomContainer = findViewById(R.id.scrollToBottomContainer);
+        scrollToBottomContainer.setVisibility(View.GONE);
+        scrollToBottomContainer.setAlpha(0f); // Start completely transparent
+        scrollToBottomContainer.setTranslationY(-SWIPE_DISTANCE); // Start shifted slightly up
+
         btnBack = findViewById(R.id.btnBack);
         btnAttach = findViewById(R.id.btnAttach);
 
         tvChatStatus = findViewById(R.id.tvChatStatus);
         ivChatAvatar = findViewById(R.id.ivChatAvatar);
 
-
-
+        //Load avatar
         if (friendAvatarUrl != null && !friendAvatarUrl.isEmpty()) {
             Glide.with(this)
                     .load(friendAvatarUrl.contains("null") ? R.drawable.person_icon : friendAvatarUrl)
@@ -179,17 +243,18 @@ public class MessageActivity extends BaseActivity {
         ViewGroup rootView = (ViewGroup) decorView.findViewById(android.R.id.content);
         Drawable windowBackground = decorView.getBackground();
 
-        // 1. Top Bar
+        BlurView blurViewDate = findViewById(R.id.blurViewDate);
         BlurView topBlur = findViewById(R.id.blurViewTop);
-        // 2. Attach Bubble (Left Circle)
+        BlurView blurViewScroll = findViewById(R.id.blurViewScroll);
         BlurView attachBlur = findViewById(R.id.blurViewAttach);
-        // 3. Input Bubble (Right Pill)
         BlurView inputBlur = findViewById(R.id.blurViewInput);
 
         // Helper function (or just repeat the setup 3 times)
         setupSingleBlur(topBlur, rootView, windowBackground, radius, glassColor);
         setupSingleBlur(attachBlur, rootView, windowBackground, radius, glassColor);
         setupSingleBlur(inputBlur, rootView, windowBackground, radius, glassColor);
+        setupSingleBlur(blurViewScroll, rootView, windowBackground, radius, glassColor);
+        setupSingleBlur(blurViewDate, rootView, windowBackground, radius, glassColor);
     }
 
     private void setupSingleBlur(BlurView view, ViewGroup root, Drawable bg, float radius, int color) {
@@ -207,9 +272,109 @@ public class MessageActivity extends BaseActivity {
         //TODO sanitize input
 
         messageViewModel.addNewMessage(content);
-
         etMessageInput.setText("");
 
+        rvChatMessages.post(() ->
+                rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1)
+        );
+    }
+
+
+    private void updateDateBadge(int firstVisiblePosition) {
+        if (adapter.getItemCount() > 0 && firstVisiblePosition >= 0) {
+            MessageModel message = adapter.getMessage(firstVisiblePosition);
+            String formattedDate = formatDateBadge(message.timestamp());
+
+            // Only update the TextView if the date string has actually changed
+            if (!formattedDate.equals(currentDateBadgeText)) {
+                tvDateBadge.setText(formattedDate);
+                currentDateBadgeText = formattedDate;
+            }
+        }
+    }
+
+    private void showDateBadge() {
+        if (!isDateBadgeVisible) {
+            isDateBadgeVisible = true;
+
+            // Instantly snap to the top before making it visible
+            // This resets it in case the previous hide animation left it at the bottom
+            dateBadgeContainer.setTranslationY(-SWIPE_DISTANCE);
+            dateBadgeContainer.setVisibility(View.VISIBLE);
+
+            dateBadgeContainer.animate()
+                    .alpha(1f)                     // Fade in
+                    .translationY(0f)              // Swipe down to its original resting position
+                    .setDuration(400)
+                    .withEndAction(null)
+                    .start();
+        }
+    }
+
+    private void hideDateBadge() {
+        if (isDateBadgeVisible) {
+            isDateBadgeVisible = false;
+
+            dateBadgeContainer.animate()
+                    .alpha(0f)                     // Fade out
+                    .translationY(SWIPE_DISTANCE)  // Swipe down further (positive = down)
+                    .setDuration(200)
+                    .withEndAction(() -> {
+                        // Hide it completely once the animation finishes
+                        dateBadgeContainer.setVisibility(View.GONE);
+                    })
+                    .start();
+        }
+    }
+
+    private String formatDateBadge(Instant instant) {
+        LocalDate messageDate = instant.atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
+
+        if (messageDate.equals(today)) {
+            return "Today";
+        } else if (messageDate.equals(yesterday)) {
+            return "Yesterday";
+        } else {
+            // Formats older dates as "Oct 24, 2023" (adjust pattern as needed)
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault());
+            return messageDate.format(formatter);
+        }
+    }
+
+    private void showScrollToBottomButton() {
+        if (!isScrollButtonVisible) {
+            isScrollButtonVisible = true;
+
+            // Instantly snap to the top before making it visible
+            // This resets it in case the previous hide animation left it at the bottom
+            scrollToBottomContainer.setTranslationY(-SWIPE_DISTANCE);
+            scrollToBottomContainer.setVisibility(View.VISIBLE);
+
+            scrollToBottomContainer.animate()
+                    .alpha(1f)                     // Fade in
+                    .translationY(0f)              // Swipe down to its original resting position
+                    .setDuration(400)
+                    .withEndAction(null)
+                    .start();
+        }
+    }
+
+    private void hideScrollToBottomButton() {
+        if (isScrollButtonVisible) {
+            isScrollButtonVisible = false;
+
+            scrollToBottomContainer.animate()
+                    .alpha(0f)                     // Fade out
+                    .translationY(SWIPE_DISTANCE)  // Swipe down further (positive = down)
+                    .setDuration(200)
+                    .withEndAction(() -> {
+                        // Hide it completely once the animation finishes
+                        scrollToBottomContainer.setVisibility(View.GONE);
+                    })
+                    .start();
+        }
     }
 
 }
