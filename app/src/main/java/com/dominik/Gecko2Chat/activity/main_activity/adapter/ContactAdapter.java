@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.dominik.Gecko2Chat.R;
 import com.dominik.Gecko2Chat.model.ContactModel;
+import com.google.android.material.card.MaterialCardView;
 
 import java.util.List;
 
@@ -63,7 +64,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
     public static class ContactViewHolder extends RecyclerView.ViewHolder {
         private TextView tvName, tvLastSeen;
         private ImageView ivAvatar;
-        private ConstraintLayout clItemContact;
+        private MaterialCardView clItemContact;
 
 
         public ContactViewHolder(@NonNull View itemView) {

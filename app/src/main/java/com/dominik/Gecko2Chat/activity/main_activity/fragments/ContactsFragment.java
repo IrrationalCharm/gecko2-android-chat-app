@@ -11,6 +11,7 @@ import androidx.cardview.widget.CardView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -61,7 +62,7 @@ public class ContactsFragment extends BaseConnectionFragment {
             startActivity(intent);
         });
 
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
 
         contactList = new ArrayList<>();
         adapter = new ContactAdapter(contactList, contact -> {
