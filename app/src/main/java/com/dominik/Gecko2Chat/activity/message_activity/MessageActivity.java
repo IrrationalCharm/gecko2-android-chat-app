@@ -2,16 +2,19 @@ package com.dominik.Gecko2Chat.activity.message_activity;
 
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.transition.ChangeBounds;
+import android.transition.ChangeTransform;
+import android.transition.Fade;
+import android.transition.TransitionSet;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -46,15 +49,18 @@ public class MessageActivity extends BaseActivity {
     private boolean isScrollButtonVisible = false;
     private final float SWIPE_DISTANCE = 70f;
     private MaterialCardView scrollToBottomContainer, dateBadgeContainer;
+    private MaterialCardView inputContainer, attachContainer;
 
     private RecyclerView rvChatMessages;
     private MessageAdapter adapter;
     private EditText etMessageInput;
-    private ImageView btnBack, ivChatAvatar, btnAttach;
+    private ImageView btnAttach;
     private View btnSend;
     private String friendId, friendName, friendAvatarUrl;
-    private TextView tvChatStatus, tvDateBadge;
+    private TextView tvDateBadge;
     private MessageViewModel messageViewModel;
+
+    private FriendHeaderController profileController;
 
 
     @Override
@@ -62,14 +68,13 @@ public class MessageActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-
         myId = UserManager.getInstance(this).getUser().internalId();
         friendId = getIntent().getStringExtra("FRIEND_ID");
         friendName = getIntent().getStringExtra("FRIEND_NAME");
         friendAvatarUrl = getIntent().getStringExtra("FRIEND_AVATAR");
 
-
         initViews();
+        initProfileController();
         initListeners();
 
         messageViewModel = new ViewModelProvider(this).get(MessageViewModel.class);
@@ -83,6 +88,31 @@ public class MessageActivity extends BaseActivity {
 
     }
 
+    private void initProfileController() {
+        View decorView = getWindow().getDecorView();
+        ViewGroup rootView = decorView.findViewById(android.R.id.content);
+        Drawable windowBackground = decorView.getBackground();
+
+        // Pass the logic off to our new class
+        profileController = new FriendHeaderController(
+                this, rootView, windowBackground, friendName, friendAvatarUrl,
+                new FriendHeaderController.ProfileActionCallback() {
+                    @Override
+                    public void onProfileToggled(boolean isExpanded) {
+                        // Hide/Show bottom controls when profile expands/collapses
+                        int visibility = isExpanded ? View.GONE : View.VISIBLE;
+                        inputContainer.setVisibility(visibility);
+                        attachContainer.setVisibility(visibility);
+                        if (isScrollButtonVisible) scrollToBottomContainer.setVisibility(visibility);
+                    }
+
+                    @Override
+                    public void onExitChat() {
+                        finish();
+                    }
+                }
+        );
+    }
 
     private void setupObservers() {
         //Populates recycle view of messages
@@ -110,11 +140,8 @@ public class MessageActivity extends BaseActivity {
 
         //Monitor connection status
         messageViewModel.getConnectionStatus().observe(this, status -> {
-            if (status == WebSocketManager.ConnectionStatus.CONNECTED) {
-                tvChatStatus.setText(R.string.online); //TODO make this dependent on user activity
-            } else {
-                tvChatStatus.setText(R.string.waiting_for_network);
-            }
+            boolean isOnline = (status == WebSocketManager.ConnectionStatus.CONNECTED);
+            profileController.updateStatus(isOnline);
         });
     }
 
@@ -186,16 +213,30 @@ public class MessageActivity extends BaseActivity {
 
 
     private void initListeners() {
-        btnBack.setOnClickListener(v -> finish());
         btnSend.setOnClickListener(v -> sendMessage());
         scrollToBottomContainer.setOnClickListener(v -> rvChatMessages.smoothScrollToPosition(adapter.getItemCount() - 1));
+
+        // Let the controller handle back presses if the profile is open!
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (profileController != null && profileController.isExpanded()) {
+                    profileController.toggleProfileExpanded();
+                } else {
+                    finish();
+                }
+            }
+        });
     }
 
     private void initViews() {
         ((TextView) findViewById(R.id.tvChatName)).setText(friendName);
         etMessageInput = findViewById(R.id.etMessageInput);
-
         btnSend = findViewById(R.id.btnSendContainer);
+        btnAttach = findViewById(R.id.btnAttach);
+
+        inputContainer = findViewById(R.id.inputContainer);
+        attachContainer = findViewById(R.id.attachContainer);
 
         tvDateBadge = findViewById(R.id.tvDateBadge);
         dateBadgeContainer = findViewById(R.id.dateBadgeContainer);
@@ -207,22 +248,6 @@ public class MessageActivity extends BaseActivity {
         scrollToBottomContainer.setVisibility(View.GONE);
         scrollToBottomContainer.setAlpha(0f); // Start completely transparent
         scrollToBottomContainer.setTranslationY(-SWIPE_DISTANCE); // Start shifted slightly up
-
-        btnBack = findViewById(R.id.btnBack);
-        btnAttach = findViewById(R.id.btnAttach);
-
-        tvChatStatus = findViewById(R.id.tvChatStatus);
-        ivChatAvatar = findViewById(R.id.ivChatAvatar);
-
-        //Load avatar
-        if (friendAvatarUrl != null && !friendAvatarUrl.isEmpty()) {
-            Glide.with(this)
-                    .load(friendAvatarUrl.contains("null") ? R.drawable.person_icon : friendAvatarUrl)
-                    .placeholder(R.drawable.person_icon)
-                    .error(R.drawable.person_icon)
-                    .transform(new CircleCrop())
-                    .into(ivChatAvatar);
-        }
 
         rvChatMessages = findViewById(R.id.rvChatMessages);
         var layoutManager = new LinearLayoutManager(this);

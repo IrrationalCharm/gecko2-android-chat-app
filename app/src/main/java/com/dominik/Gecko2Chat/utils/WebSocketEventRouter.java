@@ -2,6 +2,7 @@ package com.dominik.Gecko2Chat.utils;
 
 
 import android.content.Context;
+import android.util.Log;
 
 import com.dominik.Gecko2Chat.model.websocket.incoming.ChatMessageEvent;
 import com.dominik.Gecko2Chat.model.websocket.incoming.FriendRequestAcceptedEvent;
@@ -65,6 +66,7 @@ public class WebSocketEventRouter {
 
     private void routeMessages(String json) {
         ServerMessage message = gson.fromJson(json, ServerMessage.class);
+        Log.d("WebSocketEventRouter", "Server message received... routing ");
 
         switch (message) {
             case ChatMessageEvent event -> messageRepository.incomingMessage(event);
