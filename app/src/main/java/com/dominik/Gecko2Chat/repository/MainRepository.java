@@ -45,6 +45,8 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import retrofit2.Response;
 
+
+//Im aware that this class is messy and needs refactoring...
 public class MainRepository {
 
     private static MainRepository instance;
@@ -138,14 +140,11 @@ public class MainRepository {
                             messageDao.insertAll(messageEntities);
 
                             Optional<MessageEntity> lastMessageOpt = messageEntities.stream()
-                                    .filter(msg -> msg.recipientId.equals(myId)) //Filter by messages where im the recipient
-                                    .max(Comparator.comparing(m -> m.timestamp)) //Compare each message and return the highest timestamp (last message received)
-                                    .stream().findAny(); //Deliver it to the server, so that the other user can see (if online) that it was deliveredTimestamp. Otherwise it just updates the Conversation Table in message-persistence-service
+                                    .max(Comparator.comparing(m -> m.timestamp));//Deliver it to the server, so that the other user can see (if online) that it was deliveredTimestamp. Otherwise it just updates the Conversation Table in message-persistence-service
 
                             if(lastMessageOpt.isPresent()) {
                                 MessageEntity lastMessage = lastMessageOpt.get();
                                 String friendId = lastMessage.senderId.equals(myId) ? lastMessage.recipientId : lastMessage.senderId;
-
 
                                 conversationDao.insertOrUpdate(new ConversationEntity(
                                         conv.conversationId(),
@@ -155,9 +154,13 @@ public class MainRepository {
                                         conv.unreadCount(),
                                         lastMessage.senderId
                                         ));
-
-                                sendDeliveryReceipt(lastMessage);
                             }
+
+                            Optional<MessageEntity> lastReceivedMessageOpt = messageEntities.stream()
+                                    .filter(msg -> msg.recipientId.equals(myId))
+                                    .max(Comparator.comparing(m -> m.timestamp));
+
+                            lastReceivedMessageOpt.ifPresent(this::sendDeliveryReceipt);
                         }
 
                         messageDao.markMessagesAsDelivered(conv.conversationId(), myId, conv.lastDeliveredMessage(), MessageStatus.DELIVERED);

@@ -105,35 +105,38 @@ public class MainViewModel extends AndroidViewModel {
 
 
     private void updateChatList(List<ConversationEntity> chats, List<FriendEntity> friends) {
-        if (chats == null || chats.isEmpty()) return;
-        if (friends == null || friends.isEmpty()) return;
+        if (chats == null) return; // Wait for Room to load
 
-        List<ChatModel> currentList = chatList.getValue();
-        if (currentList == null) currentList = new ArrayList<>();
-
-        // Create a copy to modify good practice for DiffUtil later
-        List<ChatModel> newUiList = new ArrayList<>(currentList);
+        // Completely rebuild the UI list based on the truth from the Database
+        List<ChatModel> newUiList = new ArrayList<>();
 
         for (ConversationEntity conv : chats) {
-            // Find friend details from the cached list
             String name = "Unknown";
             String avatar = null;
             String otherUserId = conv.otherUserId;
 
-            for (FriendEntity f : friends) {
-                if (f.internalId.equals(otherUserId)) {
-                    name = f.displayName;
-                    avatar = f.profileImageUrl;
-                    break;
-
+            // Gracefully handle if friends list is null/empty
+            if (friends != null && !friends.isEmpty()) {
+                for (FriendEntity f : friends) {
+                    if (f.internalId.equals(otherUserId)) {
+                        name = f.displayName;
+                        avatar = f.profileImageUrl;
+                        break;
+                    }
                 }
             }
 
-            newUiList.removeIf(chatModel -> chatModel.friendId().equals(otherUserId));
-
-            newUiList.add(new ChatModel(name, otherUserId, conv.lastMessageContent, conv.unreadCount,conv.lastMessageTimestamp, avatar));
+            newUiList.add(new ChatModel(
+                    name,
+                    otherUserId,
+                    conv.lastMessageContent,
+                    conv.unreadCount,
+                    conv.lastMessageTimestamp,
+                    avatar
+            ));
         }
 
+        // Emit the updated list to the Fragment
         chatList.setValue(newUiList);
     }
 

@@ -13,6 +13,7 @@ import com.dominik.Gecko2Chat.database.AppDatabase;
 import com.dominik.Gecko2Chat.model.api.KeycloakApi;
 import com.dominik.Gecko2Chat.utils.AuthStateManager;
 import com.dominik.Gecko2Chat.utils.UserManager;
+import com.dominik.Gecko2Chat.utils.WebSocketEventRouter;
 import com.dominik.Gecko2Chat.utils.WebSocketManager;
 
 import net.openid.appauth.AppAuthConfiguration;
@@ -101,6 +102,7 @@ public abstract class BaseActivity extends AppCompatActivity {
             }
             userManager.saveUserFromIdToken(idToken);
 
+            WebSocketEventRouter.getInstance(getApplicationContext());
             //Connect to websocket
             WebSocketManager.getInstance().connect(getApplicationContext());
         });

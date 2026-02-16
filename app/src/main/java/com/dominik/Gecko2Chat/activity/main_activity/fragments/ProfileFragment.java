@@ -79,13 +79,16 @@ public class ProfileFragment extends Fragment {
         viewModel.getCurrentUser().observe(getViewLifecycleOwner(), user -> {
             String username = "@" + user.username();
 
-            // Update UI"
             tvMyDisplayName.setText(user.displayName());
             tvMyUsername.setText(username);
 
-            if(user.profileImageUrl() != null && !user.profileImageUrl().isEmpty()) {
+            String profileImageUrl = user.profileImageUrl();
+            if(profileImageUrl != null && !profileImageUrl.isEmpty()) {
+
+                String expandedUrl = profileImageUrl.contains("null") ? "" : profileImageUrl.replace("_thumb", "");
+
                 Glide.with(this)
-                        .load(user.profileImageUrl().contains("null") ? R.drawable.person_icon : user.profileImageUrl())
+                        .load(expandedUrl.isEmpty() ? R.drawable.person_icon : expandedUrl)
                         .placeholder(R.drawable.person_icon)
                         .error(R.drawable.person_icon)
                         .circleCrop()

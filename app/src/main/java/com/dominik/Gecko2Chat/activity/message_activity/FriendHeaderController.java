@@ -1,5 +1,6 @@
 package com.dominik.Gecko2Chat.activity.message_activity;
 
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.graphics.drawable.Drawable;
 import android.transition.AutoTransition;
@@ -66,12 +67,13 @@ public class FriendHeaderController {
 
         if (friendAvatarUrl != null && !friendAvatarUrl.isEmpty()) {
             String avatarUrl = friendAvatarUrl.contains("null") ? "" : friendAvatarUrl;
+            String expandedAvatarUrl = avatarUrl.isEmpty() ? "" : avatarUrl.replace("_thumb", "");
 
             Glide.with(activity.getApplicationContext()).load(avatarUrl.isEmpty() ? R.drawable.person_icon : avatarUrl)
                     .placeholder(R.drawable.person_icon).error(R.drawable.person_icon)
                     .transform(new CircleCrop()).into(ivChatAvatar);
 
-            Glide.with(activity.getApplicationContext()).load(avatarUrl.isEmpty() ? R.drawable.person_icon : avatarUrl)
+            Glide.with(activity.getApplicationContext()).load(expandedAvatarUrl.isEmpty() ? R.drawable.person_icon : expandedAvatarUrl)
                     .placeholder(R.drawable.person_icon).error(R.drawable.person_icon)
                     .transform(new CircleCrop()).into(ivExpandedProfile);
         }
@@ -101,44 +103,38 @@ public class FriendHeaderController {
     }
 
     public void toggleProfileExpanded() {
-        // 1. Setup the Transition
-        AutoTransition transition = new AutoTransition();
-        transition.setDuration(300);
-        // Add these targets to make the transition smoother and prevent the square glitch
-        transition.addTarget(topBarContainer);
-        transition.addTarget(profileDetailsScrollView);
-
-        TransitionManager.beginDelayedTransition((ViewGroup) topBarContainer.getParent(), transition);
-
         ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) topBarContainer.getLayoutParams();
 
-        // Calculate 40dp offset for the translation
-        float statusBarOffset = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40, activity.getResources().getDisplayMetrics());
+        int margin16 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, activity.getResources().getDisplayMetrics());
+        int margin40 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40, activity.getResources().getDisplayMetrics());
+        float statusBarOffset = margin40;
+
+        int startHeight = topBarContainer.getHeight();
+        int targetHeight;
+        int targetMarginHorizontal;
+        int targetMarginTop;
+
+        // Safely get the parent dimensions
+        View parentView = (View) topBarContainer.getParent();
+        int parentWidth = parentView != null ? parentView.getWidth() : activity.getResources().getDisplayMetrics().widthPixels;
+        int parentHeight = parentView != null ? parentView.getHeight() : activity.getResources().getDisplayMetrics().heightPixels;
 
         if (!isProfileExpanded) {
             // ==========================================
             // EXPANDING
             // ==========================================
-            params.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            params.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            targetHeight = parentHeight;
+            targetMarginHorizontal = 0;
+            targetMarginTop = 0;
 
-            // Remove margins to fill screen
-            params.setMargins(0, 0, 0, 0);
-
-            // Keep the corner radius during expansion to prevent the square glitch
-            topBarContainer.setRadius(originalCornerRadius);
-
+            // Animate inner views
             cvChatAvatar.animate().alpha(0f).setDuration(150).start();
             llChatTitles.animate().alpha(0f).setDuration(150).start();
-
-            // FIX: Smoothly slide the back button down 40dp!
             btnBack.animate().translationY(statusBarOffset).setDuration(300).start();
 
-            // Small delay to ensure they are unclickable while invisible
             cvChatAvatar.postDelayed(() -> cvChatAvatar.setVisibility(View.INVISIBLE), 150);
             llChatTitles.postDelayed(() -> llChatTitles.setVisibility(View.INVISIBLE), 150);
 
-            // Fade IN the big profile details
             profileDetailsScrollView.setVisibility(View.VISIBLE);
             profileDetailsScrollView.setAlpha(0f);
             profileDetailsScrollView.animate().alpha(1f).setDuration(250).setStartDelay(100).start();
@@ -149,25 +145,34 @@ public class FriendHeaderController {
             // ==========================================
             // COLLAPSING
             // ==========================================
-            params.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
 
-            // Restore original margins
-            int margin16 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, activity.getResources().getDisplayMetrics());
-            int margin40 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40, activity.getResources().getDisplayMetrics());
-            params.setMargins(margin16, margin40, margin16, 0);
+            // 1. Lock ScrollView height to prevent content from squishing during collapse
+            ViewGroup.LayoutParams scrollParams = profileDetailsScrollView.getLayoutParams();
+            scrollParams.height = profileDetailsScrollView.getHeight();
+            profileDetailsScrollView.setLayoutParams(scrollParams);
 
-            // Restore rounded corners
-            topBarContainer.setRadius(originalCornerRadius);
+            // 2. Temporarily hide ScrollView to calculate the correct collapsed wrap_content height
+            profileDetailsScrollView.setVisibility(View.GONE);
+            int widthSpec = View.MeasureSpec.makeMeasureSpec(parentWidth - (margin16 * 2), View.MeasureSpec.EXACTLY);
+            int heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+            topBarContainer.measure(widthSpec, heightSpec);
+            targetHeight = topBarContainer.getMeasuredHeight();
+            profileDetailsScrollView.setVisibility(View.VISIBLE); // Bring back for fade out animation
 
-            // FIX: Smoothly slide the back button back to its original top position (0 offset)
+            targetMarginHorizontal = margin16;
+            targetMarginTop = margin40;
+
             btnBack.animate().translationY(0f).setDuration(300).start();
 
-            // Fade OUT the big profile details
+            // 3. Fade out and restore ScrollView to 0dp (match constraint) at the end
             profileDetailsScrollView.animate().alpha(0f).setDuration(150).setStartDelay(0)
-                    .withEndAction(() -> profileDetailsScrollView.setVisibility(View.GONE)).start();
+                    .withEndAction(() -> {
+                        profileDetailsScrollView.setVisibility(View.GONE);
+                        ViewGroup.LayoutParams p = profileDetailsScrollView.getLayoutParams();
+                        p.height = 0; // Reset back to 0dp for ConstraintLayout match constraint
+                        profileDetailsScrollView.setLayoutParams(p);
+                    }).start();
 
-            // Fade IN the small header elements
             cvChatAvatar.setVisibility(View.VISIBLE);
             llChatTitles.setVisibility(View.VISIBLE);
             cvChatAvatar.animate().alpha(1f).setDuration(200).setStartDelay(100).start();
@@ -176,7 +181,27 @@ public class FriendHeaderController {
             callback.onProfileToggled(false);
         }
 
-        topBarContainer.setLayoutParams(params);
+        // Keep the corner radius during the animation
+        topBarContainer.setRadius(originalCornerRadius);
+
+        int startMarginHorizontal = params.leftMargin; // Assuming left and right margins are uniform
+        int startMarginTop = params.topMargin;
+
+        // Use ValueAnimator instead of TransitionManager to force BlurView to resize frame-by-frame
+        ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
+        animator.setDuration(300);
+        animator.addUpdateListener(animation -> {
+            float fraction = animation.getAnimatedFraction();
+
+            params.height = (int) (startHeight + (targetHeight - startHeight) * fraction);
+            int currentMarginHorizontal = (int) (startMarginHorizontal + (targetMarginHorizontal - startMarginHorizontal) * fraction);
+            int currentMarginTop = (int) (startMarginTop + (targetMarginTop - startMarginTop) * fraction);
+
+            params.setMargins(currentMarginHorizontal, currentMarginTop, currentMarginHorizontal, 0);
+            topBarContainer.setLayoutParams(params);
+        });
+        animator.start();
+
         isProfileExpanded = !isProfileExpanded;
     }
 
