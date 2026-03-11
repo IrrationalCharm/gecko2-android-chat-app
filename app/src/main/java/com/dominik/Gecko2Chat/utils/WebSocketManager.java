@@ -59,7 +59,7 @@ public class WebSocketManager {
 
     private static WebSocketManager instance;
     private StompClient stompClient;
-    private final String WS_URL = "ws://10.0.2.2:8081/ws";
+    private final String WS_URL = "ws://10.0.2.2:8888/ws"; //"ws://10.0.2.2:8081/ws"
 
     // Disposables bound to the specific connection session (topics, pings)
     private final CompositeDisposable connectionDisposable = new CompositeDisposable();

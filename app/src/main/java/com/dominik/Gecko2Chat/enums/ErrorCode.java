@@ -31,6 +31,6 @@ public enum ErrorCode {
     //Internal
     UNAUTHORIZED_ACCESS, KEYCLOAK_API_ERROR,
 
-    UNKNOWN_ERROR
+    UNKNOWN_ERROR, SERVICE_UNAVAILABLE
 
 }
